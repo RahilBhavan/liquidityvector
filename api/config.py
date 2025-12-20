@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     Reads from environment variables and provides validation.
     """
     # CORS Configuration
-    ALLOWED_ORIGINS: List[Union[str, AnyHttpUrl]] = []
+    ALLOWED_ORIGINS: List[str] = []
 
     # API Keys (Optional with defaults for dev, Required for Prod in theory)
     # Add actual API keys here as needed, e.g., DEFILLAMA_API_KEY: str = ""
@@ -18,10 +18,12 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
     def parse_allowed_origins(cls, v):
         if isinstance(v, str):
-            if not v:
+            if not v or v.strip() == "":
                 return []
+            # Handle comma-separated strings
             return [origin.strip() for origin in v.split(",")]
         return v
 
