@@ -37,6 +37,24 @@ export interface BridgeMetadata {
   exploitData?: ExploitData;
 }
 
+export interface CostBreakdownEntry {
+  bridgeFee: number;
+  sourceGas: number;
+  destGas: number;
+  total: number;
+}
+
+export interface CostBreakdown {
+  entry: CostBreakdownEntry;
+  exit: CostBreakdownEntry;
+  roundTripTotal: number;
+}
+
+export interface ChartDataPoint {
+  day: number;
+  profit: number;
+}
+
 export interface RouteCalculation {
   targetPool: Pool;
   bridgeCost: number;
@@ -49,6 +67,14 @@ export interface RouteCalculation {
   estimatedTime: string;
   hasExploits: boolean;
   bridgeMetadata?: BridgeMetadata;
+  // New fields
+  dailyYieldUsd: number;
+  breakevenDays: number;
+  breakevenChartData: ChartDataPoint[];
+  profitabilityMatrix: Record<string, Record<string, number>>;
+  costBreakdown?: CostBreakdown;
+  riskWarnings: string[];
+  tvlSource: string;
 }
 
 export interface UserSettings {
