@@ -1,0 +1,70 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Header from './components/Header';
+import Sidebar from './components/Sidebar';
+import Dashboard from './components/Dashboard';
+import { useAutoCapital } from '@/hooks/useAutoCapital';
+import { useAccount, useChainId } from 'wagmi';
+import { CHAIN_ID_MAP } from '@/lib/wagmi.config';
+import { UserSettings, Chain } from '@/types';
+
+export default function Home() {
+  const [mounted, setMounted] = useState(false);
+  const [settings, setSettings] = useState<UserSettings>({
+    capital: 10000,
+    currentChain: Chain.Ethereum,
+    riskTolerance: 3,
+  });
+  const [isFetching, setIsFetching] = useState(false);
+
+  const { isConnected, address } = useAccount();
+  const chainId = useChainId();
+
+  // Auto-capital from wallet balance
+  const { populateFromWallet, canPopulate, walletBalanceUsd } = useAutoCapital({
+    currentCapital: settings.capital,
+    setCapital: (value) => setSettings(prev => ({ ...prev, capital: value })),
+    autoPopulate: true,
+    minBalance: 100,
+  });
+
+  // Ensure component is mounted (client-side only) before using wallet hooks
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Sync chain from wallet when connected
+  useEffect(() => {
+    if (mounted && isConnected && chainId) {
+      const chainName = CHAIN_ID_MAP[chainId];
+      if (chainName && Object.values(Chain).includes(chainName as Chain)) {
+        setSettings(prev => ({ ...prev, currentChain: chainName as Chain }));
+      }
+    }
+  }, [mounted, isConnected, chainId]);
+
+  return (
+    <div className="flex flex-col h-screen w-screen bg-[#F9F9F5] overflow-hidden text-[#371E7B] font-sans">
+      <Header
+        walletBalance={walletBalanceUsd}
+        canPopulate={canPopulate}
+        onPopulateCapital={populateFromWallet}
+      />
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+        <Sidebar
+          settings={settings}
+          setSettings={setSettings}
+          isFetching={isFetching}
+        />
+        <main className="flex-1 h-full overflow-hidden relative border-l border-[#371E7B]">
+          <Dashboard
+            settings={settings}
+            setFetching={setIsFetching}
+            walletAddress={address}
+          />
+        </main>
+      </div>
+    </div>
+  );
+}

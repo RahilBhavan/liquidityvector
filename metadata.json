@@ -1,0 +1,5 @@
+{
+  "name": "LiquidityVector",
+  "description": "A DeFi decision engine that analyzes stablecoin yields across blockchains to calculate breakeven times for capital rotation, featuring Gemini AI risk analysis.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,16 @@
+# Liquidity Vector API Dependencies
+
+# Web framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+
+# HTTP client for external APIs
+httpx>=0.26.0
+
+# Data validation (included with FastAPI but explicit for clarity)
+pydantic>=2.5.0
+
+# Resilience & Error Handling
+slowapi>=0.1.9          # Rate limiting for FastAPI
+pybreaker>=1.0.1        # Circuit breaker pattern
+cachetools>=5.3.0       # TTL caching for gas prices
