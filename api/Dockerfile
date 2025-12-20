@@ -32,7 +32,10 @@ COPY --from=builder /root/.local /home/appuser/.local
 ENV PATH=/home/appuser/.local/bin:$PATH
 
 # Copy application code
-COPY . .
+COPY . ./api
+
+# Set working directory to project root
+WORKDIR /app
 
 # Change ownership to non-root user
 RUN chown -R appuser:appuser /app
