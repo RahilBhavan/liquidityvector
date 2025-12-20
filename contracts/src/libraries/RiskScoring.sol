@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "./BridgeTypes.sol";
-import "../interfaces/IBridgeRegistry.sol";
+import {BridgeTypes} from "./BridgeTypes.sol";
+import {IBridgeRegistry} from "../interfaces/IBridgeRegistry.sol";
 
 /**
  * @title RiskScoring
