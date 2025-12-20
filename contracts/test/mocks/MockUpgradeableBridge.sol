@@ -35,7 +35,6 @@ contract MockUpgradeableBridge {
         require(newImplementation != address(0), "Invalid implementation");
         require(newImplementation.code.length > 0, "Implementation has no code");
 
-        address oldImpl = _implementation;
         _implementation = newImplementation;
         emit Upgraded(newImplementation);
     }

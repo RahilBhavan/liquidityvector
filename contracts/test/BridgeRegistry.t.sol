@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "forge-std/Test.sol";
-import "../src/core/BridgeRegistry.sol";
-import "../src/interfaces/IBridgeRegistry.sol";
-import "./mocks/MockPausableBridge.sol";
-import "./mocks/MockUpgradeableBridge.sol";
+import {Test} from "forge-std/Test.sol";
+import {BridgeRegistry} from "../src/core/BridgeRegistry.sol";
+import {IBridgeRegistry} from "../src/interfaces/IBridgeRegistry.sol";
+import {MockPausableBridge} from "./mocks/MockPausableBridge.sol";
+import {MockUpgradeableBridge, MockImplementationV1, MockImplementationV2} from "./mocks/MockUpgradeableBridge.sol";
 
 contract BridgeRegistryTest is Test {
     BridgeRegistry public registry;
@@ -69,7 +69,7 @@ contract BridgeRegistryTest is Test {
 
     // ============ Registration Tests ============
 
-    function test_registerBridge_success() public {
+    function test_registerBridge_success() public view {
         IBridgeRegistry.BridgeConfig memory config = registry.getBridge(bridgeId);
 
         assertEq(config.name, "TestBridge");
@@ -79,7 +79,7 @@ contract BridgeRegistryTest is Test {
         assertFalse(config.isProxy);
     }
 
-    function test_registerBridge_proxyWithWhitelistedImpl() public {
+    function test_registerBridge_proxyWithWhitelistedImpl() public view {
         IBridgeRegistry.BridgeConfig memory config = registry.getBridge(proxyBridgeId);
 
         assertTrue(config.isProxy);
@@ -221,7 +221,7 @@ contract BridgeRegistryTest is Test {
 
     // ============ Query Tests ============
 
-    function test_getBridgesByType() public {
+    function test_getBridgesByType() public view {
         bytes32[] memory liquidityBridges = registry.getBridgesByType(
             IBridgeRegistry.BridgeType.LIQUIDITY
         );

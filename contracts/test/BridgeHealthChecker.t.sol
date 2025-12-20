@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "forge-std/Test.sol";
-import "../src/core/BridgeHealthChecker.sol";
-import "../src/core/BridgeRegistry.sol";
-import "../src/core/BridgeStateMonitor.sol";
-import "../src/interfaces/IBridgeHealthChecker.sol";
-import "./mocks/MockPausableBridge.sol";
-import "./mocks/MockUpgradeableBridge.sol";
+import {Test} from "forge-std/Test.sol";
+import {BridgeHealthChecker} from "../src/core/BridgeHealthChecker.sol";
+import {BridgeRegistry} from "../src/core/BridgeRegistry.sol";
+import {BridgeStateMonitor} from "../src/core/BridgeStateMonitor.sol";
+import {IBridgeHealthChecker} from "../src/interfaces/IBridgeHealthChecker.sol";
+import {IBridgeRegistry} from "../src/interfaces/IBridgeRegistry.sol";
+import {MockPausableBridge} from "./mocks/MockPausableBridge.sol";
+import {MockUpgradeableBridge, MockImplementationV1, MockImplementationV2} from "./mocks/MockUpgradeableBridge.sol";
 
 contract BridgeHealthCheckerTest is Test {
     BridgeHealthChecker public checker;
@@ -166,7 +167,7 @@ contract BridgeHealthCheckerTest is Test {
         assertEq(reason, "Bridge is paused");
     }
 
-    function test_isBridgeSafe_false_noData() public {
+    function test_isBridgeSafe_false_noData() public view {
         bytes32 unknownBridge = keccak256("Unknown");
 
         (bool isSafe, string memory reason) = checker.isBridgeSafe(unknownBridge, 60);

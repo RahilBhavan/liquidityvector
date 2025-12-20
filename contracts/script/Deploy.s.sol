@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "forge-std/Script.sol";
-import "../src/core/BridgeRegistry.sol";
-import "../src/core/BridgeStateMonitor.sol";
-import "../src/core/BridgeHealthChecker.sol";
+import {Script, console} from "forge-std/Script.sol";
+import {BridgeRegistry} from "../src/core/BridgeRegistry.sol";
+import {BridgeStateMonitor} from "../src/core/BridgeStateMonitor.sol";
+import {BridgeHealthChecker} from "../src/core/BridgeHealthChecker.sol";
 
 /**
  * @title DeployScript

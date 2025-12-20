@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "../interfaces/IBridgeRegistry.sol";
-import "../libraries/BridgeTypes.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {IBridgeRegistry} from "../interfaces/IBridgeRegistry.sol";
+import {BridgeTypes} from "../libraries/BridgeTypes.sol";
 
 /**
  * @title BridgeRegistry
@@ -20,8 +20,11 @@ import "../libraries/BridgeTypes.sol";
  */
 contract BridgeRegistry is IBridgeRegistry, AccessControl, Pausable, ReentrancyGuard {
     // ============ Roles ============
+    /// @notice Role allowed to manage bridge registrations
     bytes32 public constant REGISTRY_ADMIN_ROLE = keccak256("REGISTRY_ADMIN_ROLE");
+    /// @notice Role allowed to manage implementation whitelists
     bytes32 public constant IMPLEMENTATION_ADMIN_ROLE = keccak256("IMPLEMENTATION_ADMIN_ROLE");
+    /// @notice Role allowed to update global configuration
     bytes32 public constant CONFIG_ADMIN_ROLE = keccak256("CONFIG_ADMIN_ROLE");
 
     // ============ State ============
@@ -373,6 +376,10 @@ contract BridgeRegistry is IBridgeRegistry, AccessControl, Pausable, ReentrancyG
 
     // ============ Internal ============
 
+    /**
+     * @notice Remove a bridge ID from the active list
+     * @param bridgeId Bridge identifier to remove
+     */
     function _removeFromActiveList(bytes32 bridgeId) internal {
         for (uint256 i = 0; i < _activeBridgeIds.length; i++) {
             if (_activeBridgeIds[i] == bridgeId) {

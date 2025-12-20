@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "../interfaces/IBridgeStateMonitor.sol";
-import "../interfaces/IBridgeRegistry.sol";
-import "../libraries/BridgeTypes.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {IBridgeStateMonitor} from "../interfaces/IBridgeStateMonitor.sol";
+import {IBridgeRegistry} from "../interfaces/IBridgeRegistry.sol";
+import {BridgeTypes} from "../libraries/BridgeTypes.sol";
 
 /**
  * @title BridgeStateMonitor
@@ -22,12 +22,16 @@ contract BridgeStateMonitor is IBridgeStateMonitor, AccessControl, Pausable, Ree
     using BridgeTypes for *;
 
     // ============ Roles ============
+    /// @notice Role allowed to record bridge events
     bytes32 public constant MONITOR_ROLE = keccak256("MONITOR_ROLE");
+    /// @notice Role allowed to quarantine bridges
     bytes32 public constant QUARANTINE_ROLE = keccak256("QUARANTINE_ROLE");
+    /// @notice Role allowed to release bridges from quarantine
     bytes32 public constant RELEASE_ROLE = keccak256("RELEASE_ROLE");
 
     // ============ State ============
-    IBridgeRegistry public immutable registry;
+    /// @notice The bridge registry contract
+    IBridgeRegistry public immutable REGISTRY;
 
     mapping(bytes32 => QuarantineRecord) private _quarantineRecords;
     mapping(bytes32 => bool) private _isQuarantined;
@@ -46,7 +50,7 @@ contract BridgeStateMonitor is IBridgeStateMonitor, AccessControl, Pausable, Ree
         require(_registry != address(0), "Invalid registry");
         require(admin != address(0), "Invalid admin");
 
-        registry = IBridgeRegistry(_registry);
+        REGISTRY = IBridgeRegistry(_registry);
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(MONITOR_ROLE, admin);
@@ -67,7 +71,7 @@ contract BridgeStateMonitor is IBridgeStateMonitor, AccessControl, Pausable, Ree
 
         _isPaused[bridgeId] = true;
 
-        IBridgeRegistry.BridgeConfig memory config = registry.getBridge(bridgeId);
+        IBridgeRegistry.BridgeConfig memory config = REGISTRY.getBridge(bridgeId);
 
         SecurityEvent memory evt = SecurityEvent({
             bridgeId: bridgeId,
@@ -95,7 +99,7 @@ contract BridgeStateMonitor is IBridgeStateMonitor, AccessControl, Pausable, Ree
 
         _isPaused[bridgeId] = false;
 
-        IBridgeRegistry.BridgeConfig memory config = registry.getBridge(bridgeId);
+        IBridgeRegistry.BridgeConfig memory config = REGISTRY.getBridge(bridgeId);
 
         SecurityEvent memory evt = SecurityEvent({
             bridgeId: bridgeId,
@@ -121,7 +125,7 @@ contract BridgeStateMonitor is IBridgeStateMonitor, AccessControl, Pausable, Ree
     {
         require(newImplementation != address(0), "Invalid implementation");
 
-        IBridgeRegistry.BridgeConfig memory config = registry.getBridge(bridgeId);
+        IBridgeRegistry.BridgeConfig memory config = REGISTRY.getBridge(bridgeId);
         require(config.isProxy, "Bridge is not a proxy");
 
         address oldImpl = _currentImplementations[bridgeId];
@@ -140,7 +144,7 @@ contract BridgeStateMonitor is IBridgeStateMonitor, AccessControl, Pausable, Ree
         _securityEvents[bridgeId].push(evt);
 
         // Check if new implementation is whitelisted
-        bool isWhitelisted = registry.isImplementationWhitelisted(bridgeId, newImplementation);
+        bool isWhitelisted = REGISTRY.isImplementationWhitelisted(bridgeId, newImplementation);
 
         if (!isWhitelisted) {
             emit AnomalyDetected(
@@ -173,7 +177,7 @@ contract BridgeStateMonitor is IBridgeStateMonitor, AccessControl, Pausable, Ree
         require(bytes(reason).length > 0, "Reason required");
 
         // Verify bridge exists
-        IBridgeRegistry.BridgeConfig memory config = registry.getBridge(bridgeId);
+        IBridgeRegistry.BridgeConfig memory config = REGISTRY.getBridge(bridgeId);
         require(config.contractAddress != address(0), "Bridge not found");
 
         _isQuarantined[bridgeId] = true;
@@ -209,7 +213,7 @@ contract BridgeStateMonitor is IBridgeStateMonitor, AccessControl, Pausable, Ree
     {
         require(_isQuarantined[bridgeId], "Not quarantined");
 
-        IBridgeRegistry.BridgeConfig memory config = registry.getBridge(bridgeId);
+        IBridgeRegistry.BridgeConfig memory config = REGISTRY.getBridge(bridgeId);
 
         _isQuarantined[bridgeId] = false;
 
@@ -279,10 +283,10 @@ contract BridgeStateMonitor is IBridgeStateMonitor, AccessControl, Pausable, Ree
     {
         implementation = _currentImplementations[bridgeId];
         if (implementation == address(0)) {
-            IBridgeRegistry.BridgeConfig memory config = registry.getBridge(bridgeId);
+            IBridgeRegistry.BridgeConfig memory config = REGISTRY.getBridge(bridgeId);
             implementation = config.implementationAddress;
         }
-        isWhitelisted = registry.isImplementationWhitelisted(bridgeId, implementation);
+        isWhitelisted = REGISTRY.isImplementationWhitelisted(bridgeId, implementation);
     }
 
     /// @inheritdoc IBridgeStateMonitor

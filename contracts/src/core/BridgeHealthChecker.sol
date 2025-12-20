@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "../interfaces/IBridgeHealthChecker.sol";
-import "../interfaces/IBridgeRegistry.sol";
-import "../interfaces/IBridgeStateMonitor.sol";
-import "../libraries/BridgeTypes.sol";
-import "../libraries/RiskScoring.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {IBridgeHealthChecker} from "../interfaces/IBridgeHealthChecker.sol";
+import {IBridgeRegistry} from "../interfaces/IBridgeRegistry.sol";
+import {IBridgeStateMonitor} from "../interfaces/IBridgeStateMonitor.sol";
+import {BridgeTypes} from "../libraries/BridgeTypes.sol";
+import {RiskScoring} from "../libraries/RiskScoring.sol";
 
 /**
  * @title BridgeHealthChecker
@@ -25,17 +25,22 @@ contract BridgeHealthChecker is IBridgeHealthChecker, AccessControl, Pausable, R
     using BridgeTypes for *;
 
     // ============ Roles ============
+    /// @notice Role allowed to perform health checks
     bytes32 public constant HEALTH_CHECKER_ROLE = keccak256("HEALTH_CHECKER_ROLE");
+    /// @notice Role allowed to reset circuit breakers
     bytes32 public constant CIRCUIT_BREAKER_ROLE = keccak256("CIRCUIT_BREAKER_ROLE");
 
     // ============ State ============
-    IBridgeRegistry public immutable registry;
+    /// @notice The bridge registry contract
+    IBridgeRegistry public immutable REGISTRY;
+    /// @notice The bridge state monitor contract
     IBridgeStateMonitor public stateMonitor;
 
     mapping(bytes32 => BridgeHealthReport) private _cachedReports;
     mapping(bytes32 => uint256) private _lastCheckBlock;
     mapping(bytes32 => uint256) private _consecutiveFailures;
 
+    /// @notice Threshold for circuit breaker triggering
     uint256 public circuitBreakerThreshold;
     mapping(bytes32 => bool) private _circuitBroken;
 
@@ -55,7 +60,7 @@ contract BridgeHealthChecker is IBridgeHealthChecker, AccessControl, Pausable, R
         require(_registry != address(0), "Invalid registry");
         require(admin != address(0), "Invalid admin");
 
-        registry = IBridgeRegistry(_registry);
+        REGISTRY = IBridgeRegistry(_registry);
         if (_stateMonitor != address(0)) {
             stateMonitor = IBridgeStateMonitor(_stateMonitor);
         }
@@ -79,11 +84,11 @@ contract BridgeHealthChecker is IBridgeHealthChecker, AccessControl, Pausable, R
     {
         require(!_circuitBroken[bridgeId], "Circuit breaker open");
 
-        IBridgeRegistry.BridgeConfig memory config = registry.getBridge(bridgeId);
+        IBridgeRegistry.BridgeConfig memory config = REGISTRY.getBridge(bridgeId);
         require(config.isActive, "Bridge not active");
 
         // Check cooldown (skip if never checked before)
-        IBridgeRegistry.GlobalConfig memory globalConfig = registry.getGlobalConfig();
+        IBridgeRegistry.GlobalConfig memory globalConfig = REGISTRY.getGlobalConfig();
         if (_lastCheckBlock[bridgeId] > 0 &&
             block.number - _lastCheckBlock[bridgeId] < globalConfig.healthCheckCooldown) {
             return _cachedReports[bridgeId];
@@ -142,7 +147,7 @@ contract BridgeHealthChecker is IBridgeHealthChecker, AccessControl, Pausable, R
     {
         require(msg.sender == address(this), "Internal only");
 
-        IBridgeRegistry.BridgeConfig memory config = registry.getBridge(bridgeId);
+        IBridgeRegistry.BridgeConfig memory config = REGISTRY.getBridge(bridgeId);
         require(config.isActive, "Bridge not active");
 
         report = _performHealthCheck(bridgeId, config);
@@ -213,7 +218,7 @@ contract BridgeHealthChecker is IBridgeHealthChecker, AccessControl, Pausable, R
         override
         returns (bytes32[] memory)
     {
-        bytes32[] memory allBridges = registry.getActiveBridges();
+        bytes32[] memory allBridges = REGISTRY.getActiveBridges();
 
         // First pass: count qualifying bridges
         uint256 count = 0;
@@ -248,10 +253,16 @@ contract BridgeHealthChecker is IBridgeHealthChecker, AccessControl, Pausable, R
 
     // ============ Internal ============
 
+    /**
+     * @notice Perform the actual health check logic
+     * @param bridgeId Bridge identifier
+     * @param config Bridge configuration
+     * @return report Generated health report
+     */
     function _performHealthCheck(
         bytes32 bridgeId,
         IBridgeRegistry.BridgeConfig memory config
-    ) internal returns (BridgeHealthReport memory report) {
+    ) internal view returns (BridgeHealthReport memory report) {
         report.lastCheckTimestamp = block.timestamp;
 
         // Check quarantine status first (if monitor is set)
@@ -283,7 +294,7 @@ contract BridgeHealthChecker is IBridgeHealthChecker, AccessControl, Pausable, R
             address currentImpl = BridgeTypes.getImplementation(config.contractAddress);
             if (currentImpl != address(0)) {
                 report.currentImplHash = BridgeTypes.getCodeHash(currentImpl);
-                isImplWhitelisted = registry.isImplementationWhitelisted(bridgeId, currentImpl);
+                isImplWhitelisted = REGISTRY.isImplementationWhitelisted(bridgeId, currentImpl);
             }
 
             if (!isImplWhitelisted) {
@@ -318,6 +329,11 @@ contract BridgeHealthChecker is IBridgeHealthChecker, AccessControl, Pausable, R
         return report;
     }
 
+    /**
+     * @notice Handle a failed health check attempt
+     * @param bridgeId Bridge identifier
+     * @param reason Failure reason
+     */
     function _handleCheckFailure(bytes32 bridgeId, string memory reason) internal {
         _consecutiveFailures[bridgeId]++;
 

@@ -1,11 +1,12 @@
 {
   "name": "liquidityvector",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "vitest",
     "lint": "next lint"
   },
   "dependencies": {
@@ -13,23 +14,29 @@
     "@rainbow-me/rainbowkit": "^2.2.2",
     "@tanstack/react-query": "^5.62.8",
     "clsx": "^2.1.1",
+    "eslint-config-next": "^16.1.0",
     "framer-motion": "^12.23.26",
     "lucide-react": "^0.562.0",
-    "next": "^15.1.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "next": "^16.1.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
     "recharts": "^3.6.0",
     "tailwind-merge": "^3.4.0",
     "viem": "^2.21.54",
     "wagmi": "^2.14.6"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.1",
     "@types/node": "^22.14.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.1.2",
     "autoprefixer": "^10.4.20",
+    "jsdom": "^27.3.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
-    "typescript": "~5.8.2"
+    "typescript": "~5.8.2",
+    "vitest": "^4.0.16"
   }
 }
