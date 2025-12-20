@@ -99,6 +99,14 @@ async def health_check():
     }
 
 
+@app.get("/debug/test-alert")
+async def trigger_test_alert():
+    """Simulates a critical error to verify alerting pipelines."""
+    logger.critical("ALERT_VERIFICATION_TEST: Manually triggered critical event for monitoring validation.")
+    return {"status": "alert_triggered", "message": "Critical log entry generated"}
+
+
+
 @app.get("/pools")
 @limiter.limit("30/minute")
 async def get_pools(request: Request):
