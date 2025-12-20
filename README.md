@@ -1,9 +1,4 @@
 # LiquidityVector
-
-<div align="center">
-<img width="1200" height="475" alt="LiquidityVector Banner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
-
 **A DeFi decision engine that analyzes stablecoin yields across blockchains to calculate breakeven times for capital rotation, featuring Gemini AI risk analysis.**
 
 ---
