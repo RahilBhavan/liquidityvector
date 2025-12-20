@@ -18,6 +18,7 @@ from slowapi.errors import RateLimitExceeded
 from .models import AnalyzeRequest, RouteCalculation, YieldResponse
 from .services import get_service, cleanup_service, ExternalAPIError, InsufficientLiquidityError, BridgeRouteError
 from .resilience import get_circuit_states
+from .config import settings
 
 # Configure structured logging
 logging.basicConfig(
@@ -33,7 +34,9 @@ limiter = Limiter(key_func=get_remote_address)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifecycle - startup and shutdown."""
-    # Startup: service is lazily initialized
+    # Startup: Validate security settings
+    settings.validate_production_security()
+    # service is lazily initialized
     yield
     # Shutdown: cleanup resources
     await cleanup_service()
@@ -75,20 +78,10 @@ async def route_exception_handler(request: Request, exc: BridgeRouteError):
         content={"detail": str(exc), "error_type": "BridgeRouteError"}
     )
 
-# CORS Configuration - Support environment-based origins for production
-env_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
-origins = [
-    "http://localhost:5173",
-    "http://localhost:3000",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:3000",
-]
-# Add and filter any empty strings from env
-origins.extend([o.strip() for o in env_origins if o.strip()])
-
+# CORS Configuration - Managed via config.py
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=[str(origin) for origin in settings.ALLOWED_ORIGINS],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
