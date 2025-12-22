@@ -120,7 +120,7 @@ To evaluate model success, track:
    *Goal: > 1.0 (Users earn more than they burn).*
 
 3. **Protocol Capture Rate (PCR):** (Post-Token)
-   $$PCR = \frac{\text{Revenue}_{\text{protocol}}}{\text{Volume}_{\text{bridged}}}$$
+   $$ PCR = \frac{\text{Revenue}_{\text{protocol}}}{\text{Volume}_{\text{bridged}}} $$
    *Target: 0.05% (Standard aggregator take).*
 
 ---
