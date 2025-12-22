@@ -1,20 +1,21 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 @layer base {
   :root {
-    /* Digital Philately - Risograph Palette */
-    --paper-white: #F4F1EA;
-    --sumi-black: #111111;
-    --intl-orange: #FF2E00;
-    --cobalt-blue: #0038A8;
-    --matchbox-green: #005C42;
-    --kraft-brown: #C7B299;
+    /* Digital Philately 2.0 - Soft Neobrutalism */
+    --paper-white: #F9F7F5;
+    --paper-hightlight: #FFFFFF;
+    --sumi-black: #1A1A1A;
+    /* Softer black */
+    --intl-orange: #FF4D00;
+    /* Slightly brighter */
+    --cobalt-blue: #0047AB;
+    --matchbox-green: #006B4C;
+    --kraft-brown: #D6C4B0;
+    --soft-gray: #E5E0D8;
+
+    /* Design Tokens */
+    --radius: 8px;
+    --border-width: 2px;
+    --shadow-depth: 4px;
 
     --background: var(--paper-white);
     --foreground: var(--sumi-black);
@@ -23,26 +24,59 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+
+  /* Common Neobrutalist Card */
+  .neo-card {
+    @apply bg-white border-2 border-black rounded-[var(--radius)];
+    box-shadow: var(--shadow-depth) var(--shadow-depth) 0px 0px rgba(0, 0, 0, 1);
+    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .neo-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: calc(var(--shadow-depth) + 2px) calc(var(--shadow-depth) + 2px) 0px 0px rgba(0, 0, 0, 1);
+  }
+
+  .neo-card:active {
+    transform: translate(0px, 0px);
+    box-shadow: 0px 0px 0px 0px rgba(0, 0, 0, 1);
+  }
+
+  /* Primary Button */
+  .neo-button-primary {
+    @apply bg-[var(--intl-orange)] text-white font-bold border-2 border-black rounded-[var(--radius)] px-6 py-2 uppercase tracking-wide;
+    box-shadow: 3px 3px 0px 0px rgba(0, 0, 0, 1);
+    transition: all 0.1s ease-out;
+  }
+
+  .neo-button-primary:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  }
+
+  .neo-button-primary:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0px 0px rgba(0, 0, 0, 1);
+  }
+
+  /* Input Fields */
+  .neo-input {
+    @apply w-full bg-white border-2 border-black rounded-[var(--radius)] px-4 py-3 font-mono focus:outline-none focus:ring-0;
+    box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.2s;
+  }
+
+  .neo-input:focus {
+    box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
   }
 }
 
 @layer utilities {
-
-  /* The "Sawtooth" Stamp Edge Effect */
-  .stamp-edge {
-    background-color: white;
-    position: relative;
-    --r: 6px;
-    /* radius of the circles */
-    -webkit-mask:
-      conic-gradient(from 90deg at left var(--r) top var(--r), #0000 25%, #000 0) 0 0/calc(100% - var(--r)) calc(100% - var(--r)) border-box,
-      radial-gradient(circle closest-side, #000 98%, #0000) 50%/ calc(2*var(--r)) calc(2*var(--r)) space;
-    mask:
-      conic-gradient(from 90deg at left var(--r) top var(--r), #0000 25%, #000 0) 0 0/calc(100% - var(--r)) calc(100% - var(--r)) border-box,
-      radial-gradient(circle closest-side, #000 98%, #0000) 50%/ calc(2*var(--r)) calc(2*var(--r)) space;
-    filter: contrast(0.95) brightness(1.05);
-  }
-
   .text-balance {
     text-wrap: balance;
   }

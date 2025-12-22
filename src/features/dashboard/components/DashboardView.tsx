@@ -3,9 +3,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Pool, UserSettings, RouteCalculation } from '@/types';
 import { apiService } from '@/lib/services/apiService';
-import { RefreshCw, AlertTriangle, ArrowRight, TrendingUp, Clock, Shield } from 'lucide-react';
+import { RefreshCw, TrendingUp, Clock, ArrowRight } from 'lucide-react';
 import { StampCard } from '@/components/ui/stamp-card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 
 interface DashboardViewProps {
     settings: UserSettings;
@@ -15,19 +17,19 @@ interface DashboardViewProps {
 
 export function DashboardView({ settings, setFetching, walletAddress }: DashboardViewProps) {
     const [routes, setRoutes] = useState<RouteCalculation[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [hasAttempted, setHasAttempted] = useState(false);
 
     const calculateStrategies = useCallback(async () => {
         setLoading(true);
         setFetching(true);
         setError(null);
-
-        // Mock delay for effect
-        // await new Promise(resolve => setTimeout(resolve, 1000));
+        setHasAttempted(true);
 
         if (!walletAddress) {
-            setError("Please connect your wallet to view route calculations.");
+            // setError("Please connect your wallet to view route calculations.");
+            // Don't show error, just empty state with prompt
             setLoading(false);
             setFetching(false);
             return;
@@ -65,9 +67,12 @@ export function DashboardView({ settings, setFetching, walletAddress }: Dashboar
         }
     }, [settings.capital, settings.currentChain, settings.riskTolerance, walletAddress, setFetching]);
 
-    useEffect(() => {
-        calculateStrategies();
-    }, [calculateStrategies]);
+    // Initial load? Maybe not, better to let user initiate or wait for wallet
+    // useEffect(() => {
+    //     if (walletAddress) calculateStrategies();
+    // }, [calculateStrategies, walletAddress]);
+
+    const showEmptyState = !loading && (routes.length === 0 || error || !walletAddress);
 
     return (
         <div className="p-8 space-y-8 h-full overflow-y-auto bg-paper-white">
@@ -79,113 +84,142 @@ export function DashboardView({ settings, setFetching, walletAddress }: Dashboar
                         Market Analysis
                     </h2>
                     <div className="font-mono text-xs font-bold text-sumi-black/60 uppercase tracking-widest flex items-center gap-2">
-                        <div className="w-2 h-2 bg-intl-orange rounded-full" />
+                        <div className="w-2 h-2 bg-intl-orange rounded-full animate-pulse" />
                         Live Yield Optimization Engine
                     </div>
                 </div>
 
-                <button
+                <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={calculateStrategies}
                     disabled={loading}
-                    className="group flex items-center gap-2 px-6 py-3 bg-white border-2 border-sumi-black shadow-[4px_4px_0px_#000] active:translate-y-1 active:shadow-none transition-all disabled:opacity-50"
+                    className="group flex items-center gap-2 px-6 py-3 bg-white border-2 border-sumi-black shadow-[4px_4px_0px_#000] active:translate-y-1 active:shadow-none transition-all disabled:opacity-50 hover:bg-paper-white rounded-[var(--radius)]"
                 >
                     <RefreshCw className={cn("w-4 h-4 text-sumi-black", loading && "animate-spin")} />
                     <span className="font-mono text-sm font-bold uppercase text-sumi-black">
                         {loading ? 'ANALYZING...' : 'REFRESH_DATA'}
                     </span>
-                </button>
+                </motion.button>
             </div>
 
             {/* Content Area */}
-            {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse">
-                    {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="h-48 bg-sumi-black/5 border-2 border-dashed border-sumi-black/20 rounded-lg" />
-                    ))}
-                </div>
-            ) : error ? (
-                <StampCard className="bg-intl-orange/10 border-intl-orange">
-                    <div className="flex flex-col items-center justify-center py-12 text-center text-intl-orange">
-                        <AlertTriangle className="w-12 h-12 mb-4" />
-                        <h3 className="font-bold text-xl uppercase tracking-widest mb-2">Analysis Failed</h3>
-                        <p className="font-mono text-sm max-w-md">{error}</p>
-                    </div>
-                </StampCard>
-            ) : (
-                <div className="grid grid-cols-1 gap-6">
-                    {routes.map((route, i) => {
-                        const isBest = i === 0;
-                        const isHighRisk = route.riskLevel > settings.riskTolerance;
+            <LayoutGroup>
+                <AnimatePresence mode="wait">
+                    {loading ? (
+                        <div key="loader" className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {[1, 2, 3, 4].map(i => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    transition={{ duration: 0.2, delay: i * 0.1 }}
+                                    className="h-48 bg-white border-2 border-dashed border-sumi-black/20 rounded-[var(--radius)] animate-pulse"
+                                />
+                            ))}
+                        </div>
+                    ) : showEmptyState ? (
+                        <EmptyState
+                            key="empty"
+                            title={error ? "Analysis Failed" : !walletAddress ? "Wallet Disconnected" : "No Results"}
+                            description={error || (!walletAddress ? "Please connect your wallet to start analyzing optimal yield routes." : "Try adjusting your risk tolerance or capital allocation.")}
+                            actionLabel={!walletAddress ? undefined : "Retry Analysis"}
+                            onAction={!walletAddress ? undefined : calculateStrategies}
+                        />
+                    ) : (
+                        <motion.div
+                            key="results"
+                            className="grid grid-cols-1 gap-6"
+                        >
+                            {routes.map((route, i) => {
+                                const isBest = i === 0;
+                                const isHighRisk = route.riskLevel > settings.riskTolerance;
 
-                        if (isHighRisk && !isBest) return null; // Simple filter for now
+                                if (isHighRisk && !isBest) return null;
 
-                        return (
-                            <StampCard
-                                key={i}
-                                variant={isBest ? "blue" : "default"}
-                                className="group transition-transform hover:-translate-y-1"
-                            >
-                                <div className="flex flex-col md:flex-row justify-between gap-6">
+                                return (
+                                    <motion.div
+                                        key={`${route.targetPool.pool}-${i}`}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: i * 0.1 }}
+                                    >
+                                        <StampCard
+                                            variant={isBest ? "blue" : "default"}
+                                            className={cn(
+                                                "group transition-all hover:-translate-y-1 neo-card shadow-md hover:shadow-lg",
+                                                isBest ? "border-cobalt-blue" : ""
+                                            )}
+                                        >
+                                            <div className="flex flex-col md:flex-row justify-between gap-6">
 
-                                    {/* Left: Protocol Info */}
-                                    <div className="space-y-2 min-w-[200px]">
-                                        <div className="flex items-center gap-2">
-                                            <div className={cn(
-                                                "w-3 h-3 border border-current",
-                                                isBest ? "bg-matchbox-green" : "bg-sumi-black"
-                                            )} />
-                                            <span className={cn(
-                                                "font-mono text-xs font-bold uppercase tracking-widest opacity-80",
-                                                isBest ? "text-white" : "text-sumi-black"
-                                            )}>
-                                                {route.targetPool.chain} Network
-                                            </span>
-                                        </div>
-                                        <h3 className="font-sans text-3xl font-bold tracking-tight uppercase">
-                                            {route.targetPool.project}
-                                        </h3>
-                                        <div className="flex items-center gap-2 font-mono text-xs font-bold uppercase opacity-60">
-                                            <span>{route.bridgeName} Bridge</span>
-                                        </div>
-                                    </div>
+                                                {/* Left: Protocol Info */}
+                                                <div className="space-y-2 min-w-[200px]">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={cn(
+                                                            "w-3 h-3 border border-current rounded-full",
+                                                            isBest ? "bg-matchbox-green" : "bg-sumi-black"
+                                                        )} />
+                                                        <span className={cn(
+                                                            "font-mono text-xs font-bold uppercase tracking-widest opacity-80",
+                                                            isBest ? "text-white" : "text-sumi-black"
+                                                        )}>
+                                                            {route.targetPool.chain} Network
+                                                        </span>
+                                                    </div>
+                                                    <h3 className="font-sans text-3xl font-bold tracking-tight uppercase">
+                                                        {route.targetPool.project}
+                                                    </h3>
+                                                    <div className="flex items-center gap-2 font-mono text-xs font-bold uppercase opacity-60">
+                                                        <span>{route.bridgeName} Bridge</span>
+                                                    </div>
+                                                </div>
 
-                                    {/* Middle: Metrics */}
-                                    <div className="grid grid-cols-2 gap-8 flex-1 border-l-2 border-current/20 pl-6 border-dashed">
-                                        <div>
-                                            <div className="font-mono text-[10px] font-bold uppercase opacity-60 mb-1">Net APY</div>
-                                            <div className="font-sans text-4xl font-bold tracking-tighter flex items-center gap-2">
-                                                {route.targetPool.apy.toFixed(2)}%
-                                                <TrendingUp className="w-5 h-5 opacity-50" />
+                                                {/* Middle: Metrics */}
+                                                <div className="grid grid-cols-2 gap-8 flex-1 border-l-2 border-current/20 pl-6 border-dashed">
+                                                    <div>
+                                                        <div className="font-mono text-[10px] font-bold uppercase opacity-60 mb-1">Net APY</div>
+                                                        <div className="font-sans text-4xl font-bold tracking-tighter flex items-center gap-2">
+                                                            {route.targetPool.apy.toFixed(2)}%
+                                                            <TrendingUp className="w-5 h-5 opacity-50" />
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-mono text-[10px] font-bold uppercase opacity-60 mb-1">30d Projection</div>
+                                                        <div className="font-sans text-4xl font-bold tracking-tighter">
+                                                            ${route.netProfit30d.toFixed(2)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Right: Action */}
+                                                <div className="flex flex-col justify-between items-end min-w-[150px]">
+                                                    <div className="flex items-center gap-1 font-mono text-[10px] font-bold uppercase px-2 py-1 border border-current rounded-sm">
+                                                        <Clock className="w-3 h-3" />
+                                                        {route.estimatedTime}s
+                                                    </div>
+
+                                                    <motion.button
+                                                        whileHover={{ scale: 1.05 }}
+                                                        whileTap={{ scale: 0.95 }}
+                                                        className={cn(
+                                                            "flex items-center gap-2 px-4 py-2 font-mono text-xs font-bold uppercase border-2 transition-all rounded-[var(--radius)]",
+                                                            isBest ? "bg-white text-cobalt-blue border-white hover:bg-white/90" : "bg-sumi-black text-white border-sumi-black hover:bg-sumi-black/90"
+                                                        )}
+                                                    >
+                                                        Execute <ArrowRight className="w-3 h-3" />
+                                                    </motion.button>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div>
-                                            <div className="font-mono text-[10px] font-bold uppercase opacity-60 mb-1">30d Projection</div>
-                                            <div className="font-sans text-4xl font-bold tracking-tighter">
-                                                ${route.netProfit30d.toFixed(2)}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Right: Action */}
-                                    <div className="flex flex-col justify-between items-end min-w-[150px]">
-                                        <div className="flex items-center gap-1 font-mono text-[10px] font-bold uppercase px-2 py-1 border border-current">
-                                            <Clock className="w-3 h-3" />
-                                            {route.estimatedTime}s
-                                        </div>
-
-                                        <button className={cn(
-                                            "flex items-center gap-2 px-4 py-2 font-mono text-xs font-bold uppercase border-2 transition-all",
-                                            isBest ? "bg-white text-cobalt-blue border-white hover:bg-white/90" : "bg-sumi-black text-white border-sumi-black hover:bg-sumi-black/90"
-                                        )}>
-                                            Execute <ArrowRight className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                </div>
-                            </StampCard>
-                        );
-                    })}
-                </div>
-            )}
+                                        </StampCard>
+                                    </motion.div>
+                                );
+                            })}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </LayoutGroup>
         </div>
     );
 }

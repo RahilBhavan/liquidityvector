@@ -1,18 +1,10 @@
 "use client";
 
 import { useAccount } from "wagmi";
-import {
-    History,
-    Settings,
-    BarChart2,
-    Wallet,
-    ShieldAlert,
-    Zap,
-    Link as LinkIcon
-} from "lucide-react";
+import { Zap } from "lucide-react";
 import { Chain, UserSettings } from "@/types";
 import { cn } from "@/lib/utils";
-import { StampCard } from "@/components/ui/stamp-card";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface SidebarProps {
     settings: UserSettings;
@@ -33,7 +25,7 @@ export function Sidebar({ settings, setSettings, isFetching }: SidebarProps) {
             {/* Brand */}
             <div className="p-6 border-b-2 border-sumi-black bg-intl-orange text-white">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white border-2 border-sumi-black shadow-[2px_2px_0px_#000]">
+                    <div className="p-2 bg-white border-2 border-sumi-black shadow-none neo-card">
                         <Zap className="w-5 h-5 text-sumi-black fill-current" />
                     </div>
                     <div>
@@ -54,8 +46,8 @@ export function Sidebar({ settings, setSettings, isFetching }: SidebarProps) {
                         [ CAPITAL_ALLOCATION ]
                     </label>
                     <div className="relative group">
-                        <div className="absolute inset-0 bg-sumi-black translate-x-1 translate-y-1" />
-                        <div className="relative bg-white border-2 border-sumi-black p-1 flex items-center transition-transform group-focus-within:-translate-y-0.5 group-focus-within:-translate-x-0.5">
+                        <div className="absolute inset-0 bg-sumi-black translate-x-1 translate-y-1 rounded-[var(--radius)]" />
+                        <div className="relative bg-white border-2 border-sumi-black p-1 flex items-center transition-transform group-focus-within:-translate-y-0.5 group-focus-within:-translate-x-0.5 rounded-[var(--radius)]">
                             <span className="pl-3 font-mono text-lg text-sumi-black">$</span>
                             <input
                                 type="number"
@@ -79,24 +71,39 @@ export function Sidebar({ settings, setSettings, isFetching }: SidebarProps) {
                         [ ORIGIN_NETWORK ]
                     </label>
                     <div className="grid grid-cols-1 gap-2">
-                        {Object.values(Chain).map((chain) => {
-                            const isActive = settings.currentChain === chain;
-                            return (
-                                <button
-                                    key={chain}
-                                    onClick={() => handleChange('currentChain', chain)}
-                                    className={cn(
-                                        "relative w-full text-left px-4 py-3 border-2 border-sumi-black transition-all duration-200 flex items-center justify-between group",
-                                        isActive ? "bg-cobalt-blue text-white shadow-[4px_4px_0px_#000] -translate-y-1" : "bg-white text-sumi-black hover:bg-paper-white"
-                                    )}
-                                >
-                                    <span className={cn("font-bold text-sm tracking-tight", isActive ? "font-mono" : "font-sans")}>
-                                        {chain}
-                                    </span>
-                                    {isActive && <div className="w-2 h-2 bg-white rotate-45" />}
-                                </button>
-                            );
-                        })}
+                        <AnimatePresence mode="popLayout">
+                            {Object.values(Chain).map((chain) => {
+                                const isActive = settings.currentChain === chain;
+                                return (
+                                    <motion.button
+                                        key={chain}
+                                        layout
+                                        onClick={() => handleChange('currentChain', chain)}
+                                        whileHover={{ scale: 1.02, x: 2 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        animate={{
+                                            backgroundColor: isActive ? "var(--cobalt-blue)" : "#FFFFFF",
+                                            color: isActive ? "#FFFFFF" : "var(--sumi-black)",
+                                            borderColor: "var(--sumi-black)",
+                                        }}
+                                        className={cn(
+                                            "relative w-full text-left px-4 py-3 border-2 transition-colors duration-200 flex items-center justify-between group rounded-[var(--radius)]",
+                                            isActive ? "shadow-md" : ""
+                                        )}
+                                    >
+                                        <span className={cn("font-bold text-sm tracking-tight", isActive ? "font-mono" : "font-sans")}>
+                                            {chain}
+                                        </span>
+                                        {isActive && (
+                                            <motion.div
+                                                layoutId="active-indicator"
+                                                className="w-2 h-2 bg-white rotate-45"
+                                            />
+                                        )}
+                                    </motion.button>
+                                );
+                            })}
+                        </AnimatePresence>
                     </div>
                 </div>
 
@@ -105,16 +112,17 @@ export function Sidebar({ settings, setSettings, isFetching }: SidebarProps) {
                     <label className="text-xs font-mono font-bold text-sumi-black/60 uppercase tracking-widest flex items-center gap-2">
                         [ RISK_APPETITE ]
                     </label>
-                    <div className="bg-white border-2 border-sumi-black p-4 space-y-4">
+                    <div className="bg-white border-2 border-sumi-black p-4 space-y-4 rounded-[var(--radius)] shadow-sm">
                         <div className="flex justify-between items-end h-16 gap-1">
                             {[1, 2, 3, 4, 5].map((level) => {
                                 const isActive = settings.riskTolerance >= level;
                                 return (
-                                    <button
+                                    <motion.button
                                         key={level}
+                                        whileHover={{ scaleY: 1.1 }}
                                         onClick={() => handleChange('riskTolerance', level)}
                                         className={cn(
-                                            "flex-1 border-2 border-sumi-black transition-all duration-200",
+                                            "flex-1 border-2 border-sumi-black transition-colors duration-200 rounded-t-sm",
                                             isActive ? "bg-intl-orange" : "bg-transparent opacity-20"
                                         )}
                                         style={{ height: `${40 + (level * 12)}%` }}
@@ -135,7 +143,7 @@ export function Sidebar({ settings, setSettings, isFetching }: SidebarProps) {
             <div className="p-4 border-t-2 border-sumi-black bg-kraft-brown/20">
                 <div className="flex items-center gap-3">
                     <div className={cn(
-                        "w-3 h-3 border-2 border-sumi-black",
+                        "w-3 h-3 border-2 border-sumi-black rounded-full",
                         isFetching ? "bg-intl-orange animate-pulse" : "bg-matchbox-green"
                     )} />
                     <div className="flex flex-col">
