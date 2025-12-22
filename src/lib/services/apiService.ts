@@ -175,7 +175,14 @@ function transformRouteResponse(data: BackendRouteResponse): RouteCalculation {
     // Mocking Advanced Metrics until backend is fully updated
     safetyScore: data.risk_score ? data.risk_score / 10 : 8.5, // Convert 100-scale to 10-scale or default
     impermanentLossRisk: 'Low', // Defaulting for now
-    auditStatus: data.has_exploits ? 'Warning' : 'Verified'
+    auditStatus: data.has_exploits ? 'Warning' : 'Verified',
+
+    steps: [
+      `Bridge USDC to ${data.target_pool.chain} via ${data.bridge_name}`,
+      `Swap USDC for ${data.target_pool.symbol} on aggregator`,
+      `Deposit ${data.target_pool.symbol} into ${data.target_pool.project}`,
+      `Stake LP tokens for auto-compounding rewards`
+    ]
   };
 }
 

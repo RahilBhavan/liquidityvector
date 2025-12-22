@@ -7,6 +7,8 @@ import { RefreshCw, TrendingUp, Clock, ArrowRight, ChevronDown, ChevronUp } from
 import { StampCard } from '@/components/ui/stamp-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ProfitabilityMatrix } from '@/components/ui/profitability-matrix';
+import { BreakevenChart } from '@/components/ui/breakeven-chart';
+import { RouteSteps } from '@/components/ui/route-steps';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 
@@ -22,6 +24,11 @@ export function DashboardView({ settings, setFetching, walletAddress }: Dashboar
     const [error, setError] = useState<string | null>(null);
     const [hasAttempted, setHasAttempted] = useState(false);
     const [expandedRouteIndex, setExpandedRouteIndex] = useState<number | null>(null);
+    const [activeTabs, setActiveTabs] = useState<Record<number, string>>({});
+
+    const setTab = (index: number, tab: string) => {
+        setActiveTabs(prev => ({ ...prev, [index]: tab }));
+    };
 
     const calculateStrategies = useCallback(async () => {
         setLoading(true);
@@ -226,7 +233,7 @@ export function DashboardView({ settings, setFetching, walletAddress }: Dashboar
                                                 </div>
                                             </div>
 
-                                            {/* Expanded Content: Layout */}
+                                            {/* Expanded Content: Layout with Tabs */}
                                             <AnimatePresence>
                                                 {isExpanded && (
                                                     <motion.div
@@ -235,49 +242,100 @@ export function DashboardView({ settings, setFetching, walletAddress }: Dashboar
                                                         exit={{ opacity: 0, height: 0 }}
                                                         className="overflow-hidden"
                                                     >
-                                                        <div className="pt-6 mt-6 border-t-2 border-current/10 border-dashed grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                        <div className="pt-6 mt-6 border-t-2 border-current/10 border-dashed">
+                                                            {/* Tabs Header */}
+                                                            <div className="flex gap-4 mb-6 border-b border-current/10 pb-2 overflow-x-auto">
+                                                                {['overview', 'projections', 'execution'].map((tab) => {
+                                                                    const isActive = (activeTabs[i] || 'overview') === tab;
+                                                                    return (
+                                                                        <button
+                                                                            key={tab}
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setTab(i, tab);
+                                                                            }}
+                                                                            className={cn(
+                                                                                "text-[10px] font-bold uppercase tracking-widest py-1 px-3 rounded transition-all",
+                                                                                isActive
+                                                                                    ? "bg-current/10 opacity-100"
+                                                                                    : "opacity-40 hover:opacity-70 hover:bg-current/5"
+                                                                            )}
+                                                                        >
+                                                                            {tab}
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
 
-                                                            {/* Column 1: Strategy Details */}
-                                                            <div className="space-y-4">
-                                                                <h4 className="font-mono text-[10px] font-bold uppercase tracking-widest opacity-60 bg-current/5 px-2 py-1 rounded w-fit">
-                                                                    Strategy Breakdown
-                                                                </h4>
-                                                                <div className="grid grid-cols-2 gap-4">
-                                                                    <div className="p-3 rounded bg-current/5 border border-current/10">
-                                                                        <div className="font-mono text-[10px] uppercase opacity-60 mb-1">Safety Score</div>
-                                                                        <div className="text-xl font-bold font-sans">9.2/10</div>
-                                                                    </div>
-                                                                    <div className="p-3 rounded bg-current/5 border border-current/10">
-                                                                        <div className="font-mono text-[10px] uppercase opacity-60 mb-1">TVL</div>
-                                                                        <div className="text-xl font-bold font-sans">$42.5M</div>
-                                                                    </div>
-                                                                    <div className="p-3 rounded bg-current/5 border border-current/10">
-                                                                        <div className="font-mono text-[10px] uppercase opacity-60 mb-1">Audit Status</div>
-                                                                        <div className="text-xl font-bold font-sans flex items-center gap-2">
-                                                                            Verified <span className="w-2 h-2 bg-emerald-400 rounded-full" />
+                                                            {/* Tab Content */}
+                                                            <motion.div
+                                                                key={activeTabs[i] || 'overview'}
+                                                                initial={{ opacity: 0, x: 10 }}
+                                                                animate={{ opacity: 1, x: 0 }}
+                                                                transition={{ duration: 0.2 }}
+                                                            >
+                                                                {(activeTabs[i] || 'overview') === 'overview' && (
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                                        {/* Column 1: Strategy Details */}
+                                                                        <div className="space-y-6">
+                                                                            <div>
+                                                                                <div className="grid grid-cols-2 gap-4">
+                                                                                    <div className="p-4 rounded-lg bg-current/5 border border-current/10">
+                                                                                        <div className="font-mono text-[10px] uppercase opacity-60 mb-1">Safety Score</div>
+                                                                                        <div className="text-2xl font-bold font-sans flex items-baseline gap-1">
+                                                                                            {route.safetyScore.toFixed(1)} <span className="text-sm opacity-60">/ 10</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div className="p-4 rounded-lg bg-current/5 border border-current/10">
+                                                                                        <div className="font-mono text-[10px] uppercase opacity-60 mb-1">TVL</div>
+                                                                                        <div className="text-xl font-bold font-sans">${(route.targetPool.tvl / 1_000_000).toFixed(1)}M</div>
+                                                                                    </div>
+                                                                                    <div className="p-4 rounded-lg bg-current/5 border border-current/10">
+                                                                                        <div className="font-mono text-[10px] uppercase opacity-60 mb-1">Audit</div>
+                                                                                        <div className="text-xl font-bold font-sans flex items-center gap-2">
+                                                                                            {route.auditStatus}
+                                                                                            <div className={cn("w-2 h-2 rounded-full", route.auditStatus === 'Verified' ? "bg-emerald-500" : "bg-amber-500")} />
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div className="p-4 rounded-lg bg-current/5 border border-current/10">
+                                                                                        <div className="font-mono text-[10px] uppercase opacity-60 mb-1">Gas Est.</div>
+                                                                                        <div className="text-xl font-bold font-sans">${route.estimatedGas?.toFixed(2)}</div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <p className="text-xs opacity-80 leading-relaxed font-mono p-4 bg-current/5 rounded-lg border border-current/5">
+                                                                                Bridge via <strong>{route.bridgeName}</strong> to <strong>{route.targetPool.chain}</strong>. Enter <strong>{route.targetPool.project}</strong> pool. Auto-compounds daily.
+                                                                            </p>
+                                                                        </div>
+
+                                                                        {/* Column 2: Matrix Preview */}
+                                                                        <div className={cn("rounded-lg", isBest ? "text-sumi-black" : "")}>
+                                                                            <div className="bg-white/50 p-2 rounded-lg border border-sumi-black/5">
+                                                                                <ProfitabilityMatrix matrix={route.profitabilityMatrix} />
+                                                                            </div>
                                                                         </div>
                                                                     </div>
-                                                                    <div className="p-3 rounded bg-current/5 border border-current/10">
-                                                                        <div className="font-mono text-[10px] uppercase opacity-60 mb-1">Est. Gas</div>
-                                                                        <div className="text-xl font-bold font-sans">~$0.45</div>
-                                                                    </div>
-                                                                </div>
-                                                                <p className="text-xs opacity-70 leading-relaxed font-mono">
-                                                                    This route bridges assets via {route.bridgeName} to {route.targetPool.chain}, entering the {route.targetPool.project} {route.targetPool.pool} pool. Auto-compounds daily.
-                                                                </p>
-                                                            </div>
+                                                                )}
 
-                                                            {/* Column 2: Matrix */}
-                                                            <div className={cn("rounded-lg", isBest ? "text-sumi-black" : "")}>
-                                                                {/* Only force text color reset if parent is colored, 
-                                                                    but Matrix component handles its own colors mostly. 
-                                                                    We might need a wrapper if Matrix assumes white bg context is enough 
-                                                                    but text outside it needs contrast. 
-                                                                */}
-                                                                <div className="bg-white/50 p-2 rounded-lg">
-                                                                    <ProfitabilityMatrix matrix={route.profitabilityMatrix} />
-                                                                </div>
-                                                            </div>
+                                                                {(activeTabs[i] || 'overview') === 'projections' && (
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                                        <div className={cn("rounded-lg", isBest ? "text-sumi-black" : "")}>
+                                                                            <BreakevenChart data={route.breakevenChartData} breakevenDays={route.breakevenDays} />
+                                                                        </div>
+                                                                        <div className={cn("rounded-lg", isBest ? "text-sumi-black" : "")}>
+                                                                            <div className="bg-white/50 p-2 rounded-lg border border-sumi-black/5">
+                                                                                <ProfitabilityMatrix matrix={route.profitabilityMatrix} />
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+
+                                                                {(activeTabs[i] || 'overview') === 'execution' && (
+                                                                    <div className={cn("rounded-lg", isBest ? "text-sumi-black" : "")}>
+                                                                        <RouteSteps steps={route.steps} />
+                                                                    </div>
+                                                                )}
+                                                            </motion.div>
                                                         </div>
                                                     </motion.div>
                                                 )}

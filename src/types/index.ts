@@ -91,6 +91,9 @@ export interface RouteCalculation {
   safetyScore: number; // 0-10
   impermanentLossRisk: 'None' | 'Low' | 'Medium' | 'High';
   auditStatus: 'Verified' | 'Unverified' | 'Warning';
+
+  // Execution Plan
+  steps: string[];
 }
 
 export interface UserSettings {
