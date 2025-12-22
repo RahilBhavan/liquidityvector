@@ -57,9 +57,9 @@ USER appuser
 # Railway uses $PORT environment variable
 EXPOSE 8000
 
-# Health check using the internal port
+# Health check using the dynamic port
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD curl -f http://localhost:8000/health || exit 1
+  CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
 
 # Start uvicorn with performance-optimized workers and proxy support
 # We use a shell-style CMD to allow environment variable expansion ($PORT)
