@@ -75,9 +75,9 @@ class AggregatorService:
 
         Parallelizes network calls for optimal performance.
         """
-        from core.economics.costs import calculate_round_trip_costs
-        from core.economics.breakeven import calculate_breakeven
-        from core.economics.profitability import generate_profitability_matrix
+        from .core.economics.costs import calculate_round_trip_costs
+        from .core.economics.breakeven import calculate_breakeven
+        from .core.economics.profitability import generate_profitability_matrix
 
         target_chain = self._normalize_chain(request.target_chain)
 
