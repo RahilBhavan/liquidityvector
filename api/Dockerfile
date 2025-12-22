@@ -29,7 +29,7 @@ WORKDIR /app
 # Install runtime dependencies (curl for healthcheck)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    && rm -rf /var/lib/apt/lists/* 
+    && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
 # Create non-root user
