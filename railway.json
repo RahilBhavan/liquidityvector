@@ -3,7 +3,16 @@
   "build": {
     "builder": "DOCKERFILE",
     "dockerfilePath": "api/Dockerfile",
-    "context": "."
+    "context": ".",
+    "ignore": [
+      "app/**",
+      "public/**",
+      "next.config.ts",
+      "tailwind.config.ts",
+      "tsconfig.json",
+      "postcss.config.mjs",
+      "vitest.config.ts"
+    ]
   },
   "deploy": {
     "numReplicas": 1,

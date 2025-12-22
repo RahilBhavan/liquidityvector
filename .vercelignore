@@ -1,0 +1,9 @@
+# Ignore backend and smart contract code on Vercel
+api/
+core/
+contracts/
+docker-compose.prod.yml
+nginx.conf
+railway.json
+scripts/
+tests/
