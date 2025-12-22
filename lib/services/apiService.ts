@@ -217,8 +217,8 @@ export const apiService = {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ detail: response.statusText }));
-      console.error("API Analysis Error:", response.status, errorData);
-      throw new Error(errorData.detail || `Analysis failed: ${response.statusText}`);
+      console.error("API Analysis Error:", response.status, response.statusText, errorData);
+      throw new Error(errorData.detail || errorData.error || `Analysis failed: ${response.status} ${response.statusText}`);
     }
 
     const data: BackendRouteResponse = await response.json();
