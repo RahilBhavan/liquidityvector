@@ -21,19 +21,32 @@ The system employs a hybrid microservices topology:
 - **Frontend**: Node.js 20.x, Next.js 15.1, Tailwind CSS 3.4
 - **Blockchain**: Alchemy/Infura API keys (optional), WalletConnect Project ID
 
-## Quick Start
-1. **Environment Configuration**:
-   ```bash
-   cp .env.example .env.local
-   # Define NEXT_PUBLIC_GEMINI_API_KEY and NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
-   ```
-2. **Containerized Execution**:
-   ```bash
-   docker-compose -f docker-compose.prod.yml up -d --build
-   ```
-3. **Access**:
-   - Interface: http://localhost:3000
-   - API Reference: http://localhost:8000/docs
+## 🚀 Deployment
+
+### **Docker (Recommended)**
+Run the entire stack (Frontend + API) with a single command:
+```bash
+docker-compose -f docker-compose.prod.yml up -d --build
+```
+- **UI**: [http://localhost:3000](http://localhost:3000)
+- **API**: [http://localhost:8000](http://localhost:8000)
+
+### **Railway Deployment**
+This project is optimized for deployment on [Railway](https://railway.app/).
+
+1.  **Create Two Services**: Create one service for the Frontend and one for the Backend.
+2.  **Frontend Configuration**:
+    - **Source**: Root directory.
+    - **Dockerfile**: `Dockerfile.frontend`.
+    - **Env Vars**: Set `NEXT_PUBLIC_BACKEND_URL` to your Backend's Railway URL.
+3.  **Backend Configuration**:
+    - **Source**: `./api` directory.
+    - **Dockerfile**: `api/Dockerfile`.
+    - **Env Vars**: Set `ALLOWED_ORIGINS` to your Frontend's Railway URL.
+
+---
+
+## 🔧 Environment Configuration
 
 ## Development Workflow
 - **Linting**: Enforced via ESLint (Frontend) and Black (Backend).
