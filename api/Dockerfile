@@ -36,14 +36,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONHASHSEED=random \
     ENVIRONMENT=production
 
-# Create and switch to non-root user for security 
+# Create and switch to non-root user for security
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-RUN chown -R appuser:appuser /app
+RUN chown -R appuser:appgroup /app
 
-# Copy Logic (api and core) 
-COPY --chown=appuser:appuser api/ ./api
-COPY --chown=appuser:appuser core/ ./core
-
+# Copy Logic (api and core)
+COPY --chown=appuser:appgroup api/ ./api
+COPY --chown=appuser:appgroup core/ ./core
 # Pre-compile for faster startup 
 RUN python -m compileall /app/api /app/core
 
