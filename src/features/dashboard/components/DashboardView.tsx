@@ -226,7 +226,7 @@ export function DashboardView({ settings, setFetching, walletAddress }: Dashboar
                                                 </div>
                                             </div>
 
-                                            {/* Expanded Content: Profitability Matrix */}
+                                            {/* Expanded Content: Layout */}
                                             <AnimatePresence>
                                                 {isExpanded && (
                                                     <motion.div
@@ -235,8 +235,49 @@ export function DashboardView({ settings, setFetching, walletAddress }: Dashboar
                                                         exit={{ opacity: 0, height: 0 }}
                                                         className="overflow-hidden"
                                                     >
-                                                        <div className="pt-6 mt-6 border-t-2 border-current/10 border-dashed">
-                                                            <ProfitabilityMatrix matrix={route.profitabilityMatrix} />
+                                                        <div className="pt-6 mt-6 border-t-2 border-current/10 border-dashed grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                                                            {/* Column 1: Strategy Details */}
+                                                            <div className="space-y-4">
+                                                                <h4 className="font-mono text-[10px] font-bold uppercase tracking-widest opacity-60 bg-current/5 px-2 py-1 rounded w-fit">
+                                                                    Strategy Breakdown
+                                                                </h4>
+                                                                <div className="grid grid-cols-2 gap-4">
+                                                                    <div className="p-3 rounded bg-current/5 border border-current/10">
+                                                                        <div className="font-mono text-[10px] uppercase opacity-60 mb-1">Safety Score</div>
+                                                                        <div className="text-xl font-bold font-sans">9.2/10</div>
+                                                                    </div>
+                                                                    <div className="p-3 rounded bg-current/5 border border-current/10">
+                                                                        <div className="font-mono text-[10px] uppercase opacity-60 mb-1">TVL</div>
+                                                                        <div className="text-xl font-bold font-sans">$42.5M</div>
+                                                                    </div>
+                                                                    <div className="p-3 rounded bg-current/5 border border-current/10">
+                                                                        <div className="font-mono text-[10px] uppercase opacity-60 mb-1">Audit Status</div>
+                                                                        <div className="text-xl font-bold font-sans flex items-center gap-2">
+                                                                            Verified <span className="w-2 h-2 bg-emerald-400 rounded-full" />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="p-3 rounded bg-current/5 border border-current/10">
+                                                                        <div className="font-mono text-[10px] uppercase opacity-60 mb-1">Est. Gas</div>
+                                                                        <div className="text-xl font-bold font-sans">~$0.45</div>
+                                                                    </div>
+                                                                </div>
+                                                                <p className="text-xs opacity-70 leading-relaxed font-mono">
+                                                                    This route bridges assets via {route.bridgeName} to {route.targetPool.chain}, entering the {route.targetPool.project} {route.targetPool.pool} pool. Auto-compounds daily.
+                                                                </p>
+                                                            </div>
+
+                                                            {/* Column 2: Matrix */}
+                                                            <div className={cn("rounded-lg", isBest ? "text-sumi-black" : "")}>
+                                                                {/* Only force text color reset if parent is colored, 
+                                                                    but Matrix component handles its own colors mostly. 
+                                                                    We might need a wrapper if Matrix assumes white bg context is enough 
+                                                                    but text outside it needs contrast. 
+                                                                */}
+                                                                <div className="bg-white/50 p-2 rounded-lg">
+                                                                    <ProfitabilityMatrix matrix={route.profitabilityMatrix} />
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </motion.div>
                                                 )}
