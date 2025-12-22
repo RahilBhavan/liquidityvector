@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useAccount } from "wagmi";
-import { Zap, Wrench } from "lucide-react";
+import { Zap, Wrench, Wallet, ArrowRight } from "lucide-react";
 import { Chain, UserSettings } from "@/types";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePortfolio } from "@/hooks/usePortfolio";
 
 interface SidebarProps {
     settings: UserSettings;
@@ -15,6 +16,7 @@ interface SidebarProps {
 
 export function Sidebar({ settings, setSettings, isFetching }: SidebarProps) {
     const { isConnected } = useAccount();
+    const { assets, isLoading: portfolioLoading } = usePortfolio();
 
     const handleChange = (field: keyof UserSettings, value: any) => {
         setSettings(prev => ({ ...prev, [field]: value }));
@@ -65,6 +67,53 @@ export function Sidebar({ settings, setSettings, isFetching }: SidebarProps) {
                         </div>
                     </div>
                 </div>
+
+                {/* Portfolio Scanner [NEW] */}
+                <AnimatePresence>
+                    {isConnected && (
+                        <div className="space-y-3">
+                            <label className="text-xs font-mono font-bold text-sumi-black/60 uppercase tracking-widest flex items-center gap-2">
+                                [ DETECTED_ASSETS ]
+                                {portfolioLoading && <span className="animate-spin">⟳</span>}
+                            </label>
+                            <div className="space-y-2">
+                                {assets.map((asset) => (
+                                    <motion.button
+                                        key={asset.id}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0 }}
+                                        onClick={() => handleChange('capital', Math.floor(asset.valueUsd))}
+                                        className="w-full group flex items-center justify-between p-3 bg-white border border-sumi-black/10 hover:border-sumi-black hover:shadow-md transition-all rounded"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-1.5 bg-sumi-black/5 rounded">
+                                                <Wallet className="w-3 h-3 text-sumi-black/60" />
+                                            </div>
+                                            <div className="text-left">
+                                                <div className="text-xs font-bold text-sumi-black">{asset.name}</div>
+                                                <div className="text-[10px] font-mono text-sumi-black/60">
+                                                    {asset.symbol} • {asset.apy}% APY
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-xs font-bold font-mono text-sumi-black">${asset.valueUsd.toLocaleString()}</div>
+                                            <div className="flex items-center justify-end gap-1 text-[8px] uppercase font-bold text-matchbox-green opacity-0 group-hover:opacity-100 transition-opacity">
+                                                Migrate <ArrowRight className="w-2 h-2" />
+                                            </div>
+                                        </div>
+                                    </motion.button>
+                                ))}
+                                {!portfolioLoading && assets.length === 0 && (
+                                    <div className="p-3 text-center text-xs text-sumi-black/40 font-mono italic">
+                                        No migrateable assets found.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </AnimatePresence>
 
                 {/* Chain Selector (Stamp Grid) */}
                 <div className="space-y-3">

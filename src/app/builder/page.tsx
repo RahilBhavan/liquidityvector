@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, ReactNode, useEffect } from 'react';
 import {
     ReactFlow,
     Background,
@@ -12,13 +12,19 @@ import {
     Connection,
     Edge,
     ReactFlowProvider,
-    Node
+    Node,
+    Panel,
+    useReactFlow
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import { BuilderSidebar } from '@/features/builder/components/BuilderSidebar';
 import ActionNode from '@/features/builder/components/ActionNode';
-import { ArrowLeft, Play } from 'lucide-react';
+import { StrategySummary } from '@/features/builder/components/StrategySummary';
+import { StrategyManagerModal, SavedStrategy } from '@/features/builder/components/StrategyManagerModal';
+import { ExecutionModal } from '@/features/builder/components/ExecutionModal';
+import { calculateVScore } from '@/lib/utils/vScore';
+import { ArrowLeft, Play, Save, FolderOpen, Rocket } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
@@ -32,19 +38,26 @@ const initialNodes: Node[] = [
     {
         id: '1',
         type: 'customAction',
-        position: { x: 250, y: 100 },
+        position: { x: 100, y: 100 },
         data: { label: 'My Wallet', type: 'wallet', details: 'USDC on Ethereum', network: 'ETH' }
     },
     {
         id: '2',
         type: 'customAction',
-        position: { x: 250, y: 300 },
-        data: { label: 'Bridge to Base', type: 'bridge', details: 'Using Stargate Protocol', network: 'Base' }
+        position: { x: 450, y: 100 },
+        data: { label: 'Stargate Bridge', type: 'bridge', details: 'Bridge USDC to Base', network: 'Base' }
     },
+    {
+        id: '3',
+        type: 'customAction',
+        position: { x: 800, y: 100 },
+        data: { label: 'Aerodrome Pool', type: 'pool', details: 'Provide Liquidity', network: 'Base' }
+    }
 ];
 
 const initialEdges: Edge[] = [
-    { id: 'e1-2', source: '1', target: '2', animated: true, style: { stroke: '#0047AB' } },
+    { id: 'e1-2', source: '1', target: '2', animated: true, style: { stroke: '#1A1A1A', strokeWidth: 2 } },
+    { id: 'e2-3', source: '2', target: '3', animated: true, style: { stroke: '#1A1A1A', strokeWidth: 2 } },
 ];
 
 function BuilderArea() {
@@ -53,8 +66,15 @@ function BuilderArea() {
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
     const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
 
+    // Strategy Persistence State
+    const [isManagerOpen, setIsManagerOpen] = useState(false);
+    const [currentStrategyName, setCurrentStrategyName] = useState('Untitled Strategy');
+
+    // Execution Mode State
+    const [isExecutionOpen, setIsExecutionOpen] = useState(false);
+
     const onConnect = useCallback(
-        (params: Connection) => setEdges((eds) => addEdge({ ...params, animated: true, style: { stroke: '#0047AB' } }, eds)),
+        (params: Connection) => setEdges((eds) => addEdge({ ...params, animated: true, style: { stroke: '#1A1A1A', strokeWidth: 2 } }, eds)),
         [setEdges]
     );
 
@@ -93,13 +113,46 @@ function BuilderArea() {
 
     const simulateStrategy = useCallback(() => {
         setNodes((nds) => nds.map((node) => {
-            let mockData = {};
+            let mockData: any = {};
+
+            // Logic to derive realistic inputs for V-Score
+            // In a real app, this would come from the backend or an on-chain call
+            const label = (node.data.label as string) || '';
+            const isHighTvl = label.toLowerCase().includes('aave') || label.toLowerCase().includes('aerodrome') || label.toLowerCase().includes('uniswap');
+            const isRisky = label.toLowerCase().includes('degen') || label.toLowerCase().includes('meme');
+
+            const estimatedTvl = isHighTvl ? 150_000_000 : isRisky ? 500_000 : 5_000_000;
+            const bridgeAge = node.data.type === 'bridge' ? (label.includes('Stargate') ? 4 : 1) : 0;
+
             if (node.data.type === 'pool') {
-                mockData = { apy: (Math.random() * 10 + 2).toFixed(2), risk: Math.random() > 0.5 ? 'Low' : 'Medium' };
+                const vScore = calculateVScore({
+                    tvlUsd: estimatedTvl,
+                    auditStatus: isRisky ? 'Warning' : 'Verified'
+                });
+
+                mockData = {
+                    apy: (Math.random() * 8 + 4).toFixed(2),
+                    poolDepth: isHighTvl ? '$150M+' : isRisky ? '$500k' : '$5M',
+                    vScore: vScore
+                };
             } else if (node.data.type === 'bridge') {
-                mockData = { gas: (Math.random() * 5 + 1).toFixed(2), time: Math.floor(Math.random() * 20 + 5) };
+                const vScore = calculateVScore({
+                    tvlUsd: estimatedTvl,
+                    bridgeMetadata: { ageYears: bridgeAge, hasExploits: false }
+                });
+
+                mockData = {
+                    gas: (Math.random() * 3 + 1).toFixed(2),
+                    time: Math.floor(Math.random() * 15 + 5),
+                    bridgeFee: (Math.random() * 1 + 0.5).toFixed(2),
+                    slippage: (Math.random() * 0.1).toFixed(2),
+                    vScore: vScore
+                };
             } else if (node.data.type === 'swap') {
-                mockData = { gas: (Math.random() * 2 + 0.5).toFixed(2), risk: 'Low' };
+                mockData = {
+                    gas: (Math.random() * 0.5 + 0.1).toFixed(2),
+                    slippage: (Math.random() * 0.2).toFixed(2),
+                };
             }
             return {
                 ...node,
@@ -111,37 +164,97 @@ function BuilderArea() {
         }));
     }, [setNodes]);
 
+    // Handle Persistence
+    const handleSaveStrategy = (name: string) => {
+        const flow = reactFlowInstance.toObject();
+        const newStrategy: SavedStrategy = {
+            id: Math.random().toString(36).substr(2, 9),
+            name,
+            date: Date.now(),
+            nodeCount: nodes.length,
+            preview: JSON.stringify(flow)
+        };
+
+        const stored = localStorage.getItem('lv_strategies');
+        const strategies = stored ? JSON.parse(stored) : [];
+        strategies.push(newStrategy);
+        localStorage.setItem('lv_strategies', JSON.stringify(strategies));
+
+        setCurrentStrategyName(name);
+        // Toast is theoretically here but we lack the component setup, relying on UI feedback
+    };
+
+    const handleLoadStrategy = (strategy: SavedStrategy) => {
+        const flow = JSON.parse(strategy.preview);
+
+        if (flow) {
+            const { x = 0, y = 0, zoom = 1 } = flow.viewport;
+            setNodes(flow.nodes || []);
+            setEdges(flow.edges || []);
+            reactFlowInstance.setViewport({ x, y, zoom });
+            setCurrentStrategyName(strategy.name);
+        }
+    };
+
     return (
-        <div className="flex h-screen w-full bg-paper-white overflow-hidden">
+        <div className="flex h-screen w-full bg-paper-white overflow-hidden font-sans text-sumi-black">
+            <StrategyManagerModal
+                isOpen={isManagerOpen}
+                onClose={() => setIsManagerOpen(false)}
+                onSave={handleSaveStrategy}
+                onLoad={handleLoadStrategy}
+                currentNodesCount={nodes.length}
+            />
+
+            <ExecutionModal
+                isOpen={isExecutionOpen}
+                onClose={() => setIsExecutionOpen(false)}
+                nodes={nodes}
+            />
+
             <BuilderSidebar />
 
-            <div className="flex-1 flex flex-col h-full">
+            <div className="flex-1 flex flex-col h-full bg-[#f0f0f0]">
                 {/* Top Bar */}
-                <div className="h-16 border-b border-sumi-black/10 flex items-center px-6 bg-white justify-between z-10">
+                <div className="h-16 border-b border-sumi-black/10 flex items-center px-6 bg-white justify-between z-10 shadow-sm relative">
                     <div className="flex items-center gap-4">
                         <Link href="/" className="p-2 hover:bg-sumi-black/5 rounded-full transition-colors">
                             <ArrowLeft className="w-5 h-5 text-sumi-black" />
                         </Link>
                         <div>
-                            <h1 className="font-bold text-sumi-black">Strategy Builder</h1>
-                            <div className="text-[10px] font-mono opacity-60 uppercase tracking-widest">Untitled Strategy 01</div>
+                            <div className="flex items-center gap-2">
+                                <h1 className="font-bold text-lg text-sumi-black leading-none">Strategy Buider</h1>
+                                <span className="bg-sumi-black text-white text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Beta</span>
+                            </div>
+                            <div className="text-[10px] font-mono opacity-60 uppercase tracking-widest mt-0.5">{currentStrategyName}</div>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <div className="px-3 py-1 bg-matchbox-green/10 text-matchbox-green text-xs font-bold rounded uppercase">
-                            Auto-Save On
-                        </div>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setIsManagerOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-white border border-sumi-black/20 hover:border-sumi-black text-sumi-black text-xs font-bold rounded uppercase transition-all"
+                        >
+                            <FolderOpen className="w-3 h-3" /> Load / Save
+                        </button>
                         <button
                             onClick={simulateStrategy}
-                            className="flex items-center gap-2 px-4 py-2 bg-cobalt-blue text-white text-xs font-bold rounded uppercase shadow-sm active:translate-y-0.5 hover:bg-cobalt-blue/90 transition-all"
+                            className="flex items-center gap-2 px-6 py-2 bg-cobalt-blue text-white text-xs font-bold rounded uppercase shadow-[3px_3px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-[1px_1px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_rgba(0,0,0,1)] transition-all"
                         >
                             <Play className="w-3 h-3" /> Run Simulation
+                        </button>
+                        <button
+                            onClick={() => setIsExecutionOpen(true)}
+                            className="flex items-center gap-2 px-6 py-2 bg-intl-orange text-white text-xs font-bold rounded uppercase shadow-[3px_3px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-[1px_1px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_rgba(0,0,0,1)] transition-all"
+                        >
+                            <Rocket className="w-3 h-3" /> Deploy
                         </button>
                     </div>
                 </div>
 
                 {/* Canvas */}
-                <div className="flex-1 h-full" ref={reactFlowWrapper}>
+                <div className="flex-1 h-full relative" ref={reactFlowWrapper}>
+                    <StrategySummary nodes={nodes} />
+
                     <ReactFlow
                         nodes={nodes}
                         edges={edges}
@@ -153,16 +266,17 @@ function BuilderArea() {
                         onDragOver={onDragOver}
                         nodeTypes={nodeTypes}
                         fitView
-                        className="bg-paper-white"
+                        className="bg-[#f0f0f0]"
                         defaultEdgeOptions={{
                             type: 'smoothstep',
+                            animated: true,
                             style: { strokeWidth: 2, stroke: '#1a1a1a' }
                         }}
                     >
-                        <Background color="#1a1a1a" gap={20} size={1} className="opacity-5" />
-                        <Controls className="!bg-white !border-sumi-black !shadow-sm !text-sumi-black" />
+                        <Background color="#1a1a1a" gap={24} size={1} className="opacity-5" />
+                        <Controls className="!bg-white !border-2 !border-sumi-black !shadow-[4px_4px_0px_rgba(0,0,0,1)] !rounded-lg overflow-hidden [&>button]:!border-b [&>button]:!border-sumi-black/10 [&>button:last-child]:!border-none !text-sumi-black" />
                         <MiniMap
-                            className="!border-sumi-black/10 !bg-white"
+                            className="!border-2 !border-sumi-black !bg-white !rounded-lg !shadow-[4px_4px_0px_rgba(0,0,0,1)] !m-6"
                             maskColor="rgba(240, 240, 240, 0.6)"
                             nodeColor={(n) => {
                                 if (n.data.type === 'wallet') return '#1a1a1a';
