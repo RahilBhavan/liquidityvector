@@ -28,117 +28,23 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("liquidityvector")
+logger.info("Initializing Liquidity Vector API...")
 
-# Rate limiter using client IP address
-limiter = Limiter(key_func=get_remote_address)
-
-# Ethereum address validation regex
-ETH_ADDRESS_PATTERN = re.compile(r"^0x[a-fA-F0-9]{40}$")
-
-
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """Add security headers to all responses."""
-
-    async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
-
-        # Security headers
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-
-        # Cache control for API responses
-        if request.url.path.startswith("/api") or request.url.path in ["/pools", "/analyze"]:
-            response.headers["Cache-Control"] = "no-store, max-age=0"
-
-        return response
-
-
-def validate_wallet_address(address: str) -> bool:
-    """Validate Ethereum wallet address format."""
-    return bool(ETH_ADDRESS_PATTERN.match(address))
-
-
-def validate_chain_param(chain: str) -> str:
-    """Validate and normalize chain parameter."""
-    chain_lower = chain.lower().strip()
-    valid_chains = {
-        "ethereum", "eth",
-        "arbitrum", "arb",
-        "base",
-        "optimism", "op",
-        "polygon", "matic",
-        "avalanche", "avax",
-        "bnb chain", "bnbchain", "bsc", "binance"
-    }
-    if chain_lower not in valid_chains:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported chain: {chain}. Valid chains: Ethereum, Arbitrum, Base, Optimism, Polygon, Avalanche, BNB Chain"
-        )
-    return chain_lower
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Manage application lifecycle - startup and shutdown."""
-    # Startup: Validate security settings
-    settings.validate_production_security()
-    # service is lazily initialized
-    yield
-    # Shutdown: cleanup resources
-    await cleanup_service()
-
-
-app = FastAPI(
-    title="Liquidity Vector API",
-    description="DeFi route analysis and yield optimization engine",
-    version="1.0.0",
-    lifespan=lifespan
-)
-
-# Attach rate limiter to app state and add exception handler
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-# --- Custom Exception Handlers ---
-@app.exception_handler(ExternalAPIError)
-async def external_api_exception_handler(request: Request, exc: ExternalAPIError):
-    logger.error(f"External API Error: {exc}")
-    return JSONResponse(
-        status_code=503,
-        content={"detail": str(exc), "error_type": "ExternalAPIError"}
-    )
-
-@app.exception_handler(InsufficientLiquidityError)
-async def liquidity_exception_handler(request: Request, exc: InsufficientLiquidityError):
-    logger.warning(f"Liquidity Error: {exc}")
-    return JSONResponse(
-        status_code=422,
-        content={"detail": str(exc), "error_type": "InsufficientLiquidityError"}
-    )
-
-@app.exception_handler(BridgeRouteError)
-async def route_exception_handler(request: Request, exc: BridgeRouteError):
-    logger.warning(f"Route Error: {exc}")
-    return JSONResponse(
-        status_code=400,
-        content={"detail": str(exc), "error_type": "BridgeRouteError"}
-    )
-
-# Security headers middleware (must be added first)
-app.add_middleware(SecurityHeadersMiddleware)
+# ... existing code ...
 
 # CORS Configuration - Managed via config.py
+# If wildcard is used, we must handle allow_credentials carefully to avoid startup crash
+origins = [str(origin) for origin in settings.ALLOWED_ORIGINS]
+allow_all = "*" in origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[str(origin) for origin in settings.ALLOWED_ORIGINS],
-    allow_credentials=True,
+    allow_origins=origins,
+    allow_credentials=not allow_all, # credentials cannot be used with wildcard in FastAPI/Starlette
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
     expose_headers=["X-Request-ID"],
-    max_age=600,  # Cache preflight requests for 10 minutes
+    max_age=600,
 )
 
 
