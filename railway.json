@@ -7,11 +7,14 @@
     "ignore": [
       "app/**",
       "public/**",
+      "node_modules/**",
       "next.config.ts",
       "tailwind.config.ts",
       "tsconfig.json",
       "postcss.config.mjs",
-      "vitest.config.ts"
+      "vitest.config.ts",
+      ".next/**",
+      "tests/**"
     ]
   },
   "deploy": {
@@ -19,7 +22,7 @@
     "sleepService": false,
     "restartPolicyType": "ON_FAILURE",
     "healthcheckPath": "/health",
-    "healthcheckTimeout": 5,
-    "proxyTimeout": 60
+    "healthcheckTimeout": 10,
+    "proxyTimeout": 120
   }
 }

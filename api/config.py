@@ -62,9 +62,20 @@ class Settings(BaseSettings):
         return self.ENVIRONMENT.lower() == "production"
 
     @property
-    def is_development(self) -> bool:
-        """Check if running in development mode."""
-        return self.ENVIRONMENT.lower() == "development"
+    def is_railway(self) -> bool:
+        """Automatic detection for Railway platform."""
+        return "RAILWAY_ENVIRONMENT" in os.environ
+
+    @property
+    def is_vercel(self) -> bool:
+        """Automatic detection for Vercel platform."""
+        return "VERCEL" in os.environ or "VERCEL_ENV" in os.environ
+
+    @property
+    def platform(self) -> str:
+        if self.is_railway: return "railway"
+        if self.is_vercel: return "vercel"
+        return "local"
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
