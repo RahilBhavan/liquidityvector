@@ -280,15 +280,37 @@ export function DashboardView({ settings, setFetching, walletAddress }: Dashboar
                                                                         <div className="space-y-6">
                                                                             <div>
                                                                                 <div className="grid grid-cols-2 gap-4">
-                                                                                    <div className="p-4 rounded-lg bg-current/5 border border-current/10">
-                                                                                        <div className="font-mono text-[10px] uppercase opacity-60 mb-1">Safety Score</div>
-                                                                                        <div className="text-2xl font-bold font-sans flex items-baseline gap-1">
-                                                                                            {route.safetyScore.toFixed(1)} <span className="text-sm opacity-60">/ 10</span>
+                                                                                    <div className="p-4 rounded-lg bg-current/5 border border-current/10 col-span-2 md:col-span-1">
+                                                                                        <div className="flex justify-between items-start mb-2">
+                                                                                            <div className="font-mono text-[10px] uppercase opacity-60">V-Score Safety</div>
+                                                                                            <div className={cn("text-xl font-bold font-sans", route.safetyScore >= 8 ? "text-emerald-500" : route.safetyScore >= 5 ? "text-amber-500" : "text-red-500")}>
+                                                                                                {route.safetyScore.toFixed(1)}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <div className="space-y-1">
+                                                                                            <div className="flex justify-between text-[10px] font-mono opacity-60">
+                                                                                                <span>Base:</span> <span>10.0</span>
+                                                                                            </div>
+                                                                                            {route.vScoreBreakdown.tvlFactor !== 0 && (
+                                                                                                <div className="flex justify-between text-[10px] font-mono text-red-500/80">
+                                                                                                    <span>TVL Depth:</span> <span>{route.vScoreBreakdown.tvlFactor}</span>
+                                                                                                </div>
+                                                                                            )}
+                                                                                            {route.vScoreBreakdown.timeFactor !== 0 && (
+                                                                                                <div className="flex justify-between text-[10px] font-mono text-cobalt-blue/80">
+                                                                                                    <span>Lindy (Age):</span> <span>{route.vScoreBreakdown.timeFactor > 0 ? '+' : ''}{route.vScoreBreakdown.timeFactor}</span>
+                                                                                                </div>
+                                                                                            )}
+                                                                                            {route.vScoreBreakdown.exploitPenalty !== 0 && (
+                                                                                                <div className="flex justify-between text-[10px] font-mono text-red-600 font-bold">
+                                                                                                    <span>Exploit History:</span> <span>{route.vScoreBreakdown.exploitPenalty}</span>
+                                                                                                </div>
+                                                                                            )}
                                                                                         </div>
                                                                                     </div>
                                                                                     <div className="p-4 rounded-lg bg-current/5 border border-current/10">
                                                                                         <div className="font-mono text-[10px] uppercase opacity-60 mb-1">TVL</div>
-                                                                                        <div className="text-xl font-bold font-sans">${(route.targetPool.tvl / 1_000_000).toFixed(1)}M</div>
+                                                                                        <div className="text-xl font-bold font-sans">${(route.targetPool.tvlUsd / 1_000_000).toFixed(1)}M</div>
                                                                                     </div>
                                                                                     <div className="p-4 rounded-lg bg-current/5 border border-current/10">
                                                                                         <div className="font-mono text-[10px] uppercase opacity-60 mb-1">Audit</div>
@@ -299,7 +321,7 @@ export function DashboardView({ settings, setFetching, walletAddress }: Dashboar
                                                                                     </div>
                                                                                     <div className="p-4 rounded-lg bg-current/5 border border-current/10">
                                                                                         <div className="font-mono text-[10px] uppercase opacity-60 mb-1">Gas Est.</div>
-                                                                                        <div className="text-xl font-bold font-sans">${route.estimatedGas?.toFixed(2)}</div>
+                                                                                        <div className="text-xl font-bold font-sans">${route.gasCost?.toFixed(2)}</div>
                                                                                     </div>
                                                                                 </div>
                                                                             </div>

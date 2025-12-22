@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useAccount } from "wagmi";
-import { Zap } from "lucide-react";
+import { Zap, Wrench } from "lucide-react";
 import { Chain, UserSettings } from "@/types";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -135,6 +136,21 @@ export function Sidebar({ settings, setSettings, isFetching }: SidebarProps) {
                             <span>Degen</span>
                         </div>
                     </div>
+                </div>
+
+                <div className="space-y-3 pt-6 border-t-2 border-sumi-black/10 border-dashed">
+                    <label className="text-xs font-mono font-bold text-sumi-black/60 uppercase tracking-widest flex items-center gap-2">
+                        [ ADVANCED_TOOLS ]
+                    </label>
+                    <Link href="/builder" className="flex items-center gap-3 p-3 rounded-lg border-2 border-sumi-black/10 bg-white hover:border-sumi-black hover:shadow-md transition-all group">
+                        <div className="p-2 bg-cobalt-blue text-white rounded group-hover:bg-sumi-black transition-colors">
+                            <Wrench className="w-4 h-4" />
+                        </div>
+                        <div>
+                            <div className="font-bold text-sm text-sumi-black">Strategy Builder</div>
+                            <div className="text-[10px] text-sumi-black/60 font-mono">Create Custom Routes</div>
+                        </div>
+                    </Link>
                 </div>
 
             </div>

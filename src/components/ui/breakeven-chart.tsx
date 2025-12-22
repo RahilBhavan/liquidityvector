@@ -18,15 +18,15 @@ export function BreakevenChart({ data, breakevenDays }: BreakevenChartProps) {
     const padding = 20;
 
     // Scales
-    const maxVal = Math.max(...data.map(d => d.value));
-    const minVal = Math.min(...data.map(d => d.value));
+    const maxVal = Math.max(...data.map(d => d.profit));
+    const minVal = Math.min(...data.map(d => d.profit));
     const range = maxVal - minVal;
 
     // Normalize logic
     const getY = (val: number) => height - padding - ((val - minVal) / (range || 1)) * (height - 2 * padding);
     const getX = (idx: number) => padding + (idx / (data.length - 1)) * (width - 2 * padding);
 
-    const points = data.map((d, i) => `${getX(i)},${getY(d.value)}`).join(" ");
+    const points = data.map((d, i) => `${getX(i)},${getY(d.profit)}`).join(" ");
     const zeroLineY = getY(0);
 
     return (
@@ -69,7 +69,7 @@ export function BreakevenChart({ data, breakevenDays }: BreakevenChartProps) {
                         <motion.circle
                             key={i}
                             cx={getX(i)}
-                            cy={getY(d.value)}
+                            cy={getY(d.profit)}
                             r="3"
                             className="fill-cobalt-blue"
                             initial={{ scale: 0 }}

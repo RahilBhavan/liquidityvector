@@ -92,6 +92,15 @@ export interface RouteCalculation {
   impermanentLossRisk: 'None' | 'Low' | 'Medium' | 'High';
   auditStatus: 'Verified' | 'Unverified' | 'Warning';
 
+  // V-Score Analysis
+  vScoreBreakdown: {
+    total: number;
+    tvlFactor: number;
+    auditFactor: number;
+    timeFactor: number;
+    exploitPenalty: number;
+  };
+
   // Execution Plan
   steps: string[];
 }

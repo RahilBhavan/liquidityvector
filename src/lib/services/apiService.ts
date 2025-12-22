@@ -148,9 +148,65 @@ function transformCostBreakdown(data: BackendCostBreakdown | undefined): CostBre
 }
 
 /**
+ * Calculate V-Score (Vector Safety Score)
+ * A risk-decisive metric emphasizing TVL depth and security history.
+ */
+function calculateVScore(pool: BackendPoolResponse, metadata?: BackendBridgeMetadata) {
+  let score = 10.0;
+
+  // 1. TVL Factor (Logarithmic Scaling)
+  // High TVL (> $100M) is safer. Low TVL (< $1M) is risky.
+  const tvl = pool.tvlUsd;
+  let tvlFactor = 0;
+
+  if (tvl >= 100_000_000) tvlFactor = 0; // No penalty
+  else if (tvl >= 10_000_000) tvlFactor = -0.5; // Slight penalty
+  else if (tvl >= 1_000_000) tvlFactor = -2.0; // Moderate penalty
+  else tvlFactor = -4.0; // Severe penalty for low liquidity
+
+  score += tvlFactor;
+
+  // 2. Audit Factor
+  // Assuming pools from backend might have audit data, or we infer from hacks.
+  // For this mock, we assume 'Verified' is standard unless flagged.
+  let auditFactor = 0;
+  // We don't have direct audit field on pool, so we infer from general risk_level for now
+  // If we had it: if (!pool.verified) auditFactor = -2.0;
+
+  // 3. Time/Age Factor (Lindy Effect)
+  // Older bridges are safer.
+  let timeFactor = 0;
+  if (metadata) {
+    if (metadata.age_years < 1) timeFactor = -2.0; // New bridge risk
+    else if (metadata.age_years >= 4) timeFactor = +0.5; // Battle-tested bonus
+  }
+  score += timeFactor;
+
+  // 4. Exploit Penalty
+  let exploitPenalty = 0;
+  if (metadata?.has_exploits) {
+    exploitPenalty = -5.0; // Major penalty for history of hacks
+    score += exploitPenalty;
+  }
+
+  // Clamp score between 0 and 10
+  score = Math.min(Math.max(score, 0), 10);
+
+  return {
+    total: parseFloat(score.toFixed(1)),
+    tvlFactor,
+    auditFactor,
+    timeFactor,
+    exploitPenalty
+  };
+}
+
+/**
  * Transform backend route response to frontend format
  */
 function transformRouteResponse(data: BackendRouteResponse): RouteCalculation {
+  const vScore = calculateVScore(data.target_pool, data.bridge_metadata || undefined);
+
   return {
     targetPool: data.target_pool,
     bridgeCost: data.bridge_cost,
@@ -173,9 +229,11 @@ function transformRouteResponse(data: BackendRouteResponse): RouteCalculation {
     tvlSource: data.tvl_source,
 
     // Mocking Advanced Metrics until backend is fully updated
-    safetyScore: data.risk_score ? data.risk_score / 10 : 8.5, // Convert 100-scale to 10-scale or default
+    safetyScore: vScore.total,
     impermanentLossRisk: 'Low', // Defaulting for now
     auditStatus: data.has_exploits ? 'Warning' : 'Verified',
+
+    vScoreBreakdown: vScore,
 
     steps: [
       `Bridge USDC to ${data.target_pool.chain} via ${data.bridge_name}`,
