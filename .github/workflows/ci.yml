@@ -57,9 +57,6 @@ jobs:
 
   backend-quality:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./api
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python
@@ -67,16 +64,19 @@ jobs:
       with:
         python-version: '3.11'
         cache: 'pip'
+        cache-dependency-path: api/requirements*.txt
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements-dev.txt
+        pip install -r api/requirements.txt
+        pip install -r api/requirements-dev.txt
         pip install bandit
     - name: Run Tests & Coverage
-      run: python -m pytest tests/ --cov=api --cov-report=xml
+      run: python -m pytest api/tests/ --cov=api --cov-report=xml --cov-report=term-missing
+      env:
+        PYTHONPATH: ${{ github.workspace }}
     - name: Security Scan (Bandit)
-      run: bandit -r . -ll -ii
+      run: bandit -r api -ll -ii
     - name: Upload Coverage Report
       uses: actions/upload-artifact@v4
       with:

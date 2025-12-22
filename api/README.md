@@ -1,71 +1,86 @@
-# Liquidity Vector API
+# Liquidity Vector API - Technical Reference
 
-This is the backend for Liquidity Vector, a DeFi route analysis and yield optimization engine.
+## Authentication Model
+The current version of the API operates as a public utility within specified network boundaries. Ingress is managed via:
+- **CORS Whitelisting**: Restricted to specific frontend origins defined in the `ALLOWED_ORIGINS` environment variable.
+- **Client Validation**: Frontend requests must include a valid Ethereum `wallet_address` parameter for gas estimation context.
 
-## 🚀 Deployment
+## Rate Limiting & Quotas
+Rate limiting is enforced at the API layer using the `slowapi` implementation of the Token Bucket algorithm.
+- **Yield Endpoints**: 30 requests per minute per IP.
+- **Analysis Endpoints**: 60 requests per minute per IP.
+- **HTTP Headers**:
+  - `X-RateLimit-Limit`: Maximum requests per window.
+  - `X-RateLimit-Remaining`: Remaining requests in current window.
+  - `X-RateLimit-Reset`: Time until window reset.
 
-The application is containerized using Docker.
+## Endpoint Specifications
 
-### Prerequisites
-
-- Docker
-- Docker Compose
-
-### Running Locally (Docker)
-
-To run the API locally with hot-reloading enabled:
-
-```bash
-cd api
-docker-compose up --build
+### GET /health
+**Purpose:** Service health check and circuit breaker status report.
+**Response Format:**
+```json
+{
+  "status": "healthy",
+  "version": "1.0.0",
+  "circuits": {
+    "defillama": "closed",
+    "lifi": "closed",
+    "etherscan": "closed"
+  }
+}
 ```
 
-The API will be available at `http://localhost:8000`.
-
-### Production Build
-
-To build the production image:
-
-```bash
-docker build -t liquidityvector-api .
+### GET /pools
+**Purpose:** Fetch top USDC yield opportunities filtered by TVL and APY thresholds.
+**Response Format:**
+```json
+[
+  {
+    "pool": "0x...",
+    "project": "Aave",
+    "chain": "Ethereum",
+    "apy": 5.2,
+    "tvlUsd": 15000000,
+    "symbol": "USDC"
+  }
+]
 ```
 
-Run the container:
+### POST /analyze
+**Purpose:** Execute multi-dimensional route analysis for cross-chain arbitrage.
+**Request Format:**
+```json
+{
+  "capital": 10000,
+  "current_chain": "Ethereum",
+  "target_chain": "Arbitrum",
+  "pool_id": "0x...",
+  "pool_apy": 6.5,
+  "wallet_address": "0x..."
+}
+```
+**Parameters:**
+- `capital` (float, required): Total USD allocation for the trade.
+- `current_chain` (string, required): Source network name.
+- `target_chain` (string, required): Destination network name.
+- `wallet_address` (string, required): Valid 0x-prefixed Ethereum address.
 
-```bash
-docker run -d -p 8000:8000 --env-file .env liquidityvector-api
+**Response Format:**
+```json
+{
+  "total_cost": 20.80,
+  "breakeven_hours": 48.5,
+  "net_profit_30d": 145.20,
+  "risk_level": 2,
+  "bridge_name": "Arbitrum Bridge",
+  "estimated_time": "10 minutes",
+  "bridge_metadata": { ... },
+  "profitability_matrix": { ... }
+}
 ```
 
-## 🧪 Testing
-
-The project uses `pytest` for testing.
-
-### Running Tests
-
-1. Install test dependencies:
-   ```bash
-   pip install -r requirements-dev.txt
-   ```
-
-2. Run tests:
-   ```bash
-   pytest
-   ```
-
-## ⚙️ Configuration
-
-Configuration is managed via environment variables and `api/config.py`.
-
-### Environment Variables
-
-| Variable | Description | Default | Required in Prod |
-|----------|-------------|---------|------------------|
-| `ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins. | `[]` | Yes |
-| `ENVIRONMENT` | Application environment (`development`, `production`). | `development` | Yes |
-| `DEFILLAMA_API_KEY` | API Key for DefiLlama (if applicable). | `""` | No |
-
-### Production Security
-
-In `production` environment:
-- `ALLOWED_ORIGINS` **MUST** be set and cannot be `*`.
-- The application will log warnings or errors if insecure configurations are detected at startup.
+## Error Conditions
+- **422 Unprocessable Entity**: Triggered when `capital` <= 0 or when input parameters fail schema validation.
+- **429 Too Many Requests**: Triggered when the client exceeds the defined rate limit buckets.
+- **503 Service Unavailable**: Triggered when a critical upstream dependency (e.g., Li.Fi) is unreachable and the local circuit breaker is open.

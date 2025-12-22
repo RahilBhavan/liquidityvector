@@ -1,45 +1,28 @@
-# Operational Verification Guide
+# Operational Specification: System Verification
 
-This guide provides commands to implement and verify the final deployment readiness steps.
+## Overview
+This document specifies the validation procedures for confirming the integrity of a new deployment. These tests must be executed following every production update.
 
-## 1. Configure GitHub Secrets (CRITICAL)
-
-Run these commands using the `gh` CLI to securely inject secrets into your repository for the CI/CD pipeline.
-
+## 1. Alerting Pipeline Verification
+Verify that critical service errors are correctly propagated through the logging and alerting system.
 ```bash
-# Set Gemini API Key
-gh secret set NEXT_PUBLIC_GEMINI_API_KEY --body "YOUR_ACTUAL_KEY_HERE"
-
-# Set WalletConnect Project ID
-gh secret set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID --body "YOUR_PROJECT_ID_HERE"
-
-# Set Registry Credentials (if using Docker Hub/GHCR)
-gh secret set DOCKER_USERNAME --body "your-username"
-gh secret set DOCKER_PASSWORD --body "your-token-or-password"
-```
-
-## 2. Verify Alerting (HIGH)
-
-Once deployed, call the diagnostic endpoint to verify that your monitoring system (e.g., CloudWatch, Sentry, Datadog) triggers an alert.
-
-```bash
-# Trigger a critical log event
 curl -X GET https://api.yourdomain.com/debug/test-alert
 ```
+**Success Criteria**: Receipt of a critical event notification in the configured monitoring channel containing the string "ALERT_VERIFICATION_TEST".
 
-**Verification:** Check your Slack/Email/PagerDuty for a notification containing "ALERT_VERIFICATION_TEST".
-
-## 3. Manual Image Push (HIGH)
-
-If the automated CI push is not yet configured, use these commands to push the backend image to your registry.
-
+## 2. Calculation Engine Integrity
+Verify the deterministic output of the Breakeven Engine via a controlled request.
 ```bash
-# Authenticate (example for GHCR)
-echo $CR_PAT | docker login ghcr.io -u YOUR_USERNAME --password-stdin
-
-# Build and Tag
-docker build -t ghcr.io/your-org/liquidityvector-api:v1.1.0 api/
-
-# Push
-docker push ghcr.io/your-org/liquidityvector-api:v1.1.0
+curl -X POST -H "Content-Type: application/json" \
+     -d '{"capital": 1000, "current_chain": "Ethereum", "target_chain": "Arbitrum", "pool_apy": 10.0}' \
+     https://api.yourdomain.com/analyze
 ```
+**Success Criteria**: JSON response containing valid numerical values for `breakeven_hours` and `total_cost`.
+
+## 3. Container Integrity Verification
+Validate that the latest build artifacts are correctly tagged and stored in the container registry.
+```bash
+# Example verification for API container
+docker build -t ghcr.io/your-org/liquidityvector-api:v1.2.0 api/
+```
+**Success Criteria**: Successful image build and presence of the `v1.2.0` tag in the local image list.

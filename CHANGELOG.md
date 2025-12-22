@@ -1,36 +1,33 @@
-# Changelog
-
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+# Version History
 
 ## [1.2.0] - 2025-12-20
 
-### Added
-- **UI/UX**: Implemented "Liquidity Vector Terminal" design system (1-bit Brutalist).
-- **Styling**: Added custom CSS-only dither patterns (`pattern-checker`, `pattern-stipple`, `pattern-diagonal`) for texture-based hierarchy.
-- **Styling**: Added `shadow-hard` and `border-bit-black` utility classes for strict high-contrast borders and shadows.
-- **Assets**: Added `Courier Prime` font for monospace body text.
+### Technical Updates
+- Implemented "Minimalist" design system across the entire frontend stack.
+- Refactored `Dashboard`, `Sidebar`, `Header`, and `RouteCard` to remove legacy high-contrast visual logic.
+- Integrated deterministic risk scoring (V-Score) into the `RiskEngine` core.
+- Optimized charting performance via component memoization and code splitting.
 
-### Changed
-- **Global**: Enforced `border-radius: 0` globally and pixelated image rendering.
-- **Typography**: switched headers to `Press Start 2P` and body to `Courier Prime`.
-- **Components**: Refactored `Dashboard`, `Sidebar`, `Header`, and `RouteCard` to remove gradients/colors and use dither patterns.
-- **Charts**: Updated `BreakevenChart` and `Heatmap` to use 1-bit palettes and stepped lines.
-- **Performance**: Removed `framer-motion` for instant, snappy "terminal" interactions.
+### Documentation Overhaul
+- Transformed entire documentation suite to meet Senior Technical Documentation Architect standards.
+- Removed all graphical emojis and placeholders to maintain professional density.
+- Standardized documentation templates across README, Architecture, and API reference files.
 
 ## [1.1.0] - 2025-12-20
 
-### Added
-- **API**: Initialized API service with Docker support (`Dockerfile`, `docker-compose.yml`).
-- **API**: Added `config.py`, `pytest.ini`, and `requirements-dev.txt` for backend development.
-- **API**: Added unit tests in `api/tests/` (`conftest.py`, `test_main.py`).
-- **Contracts**: Updated bridge contracts (`BridgeHealthChecker`, `BridgeRegistry`, `BridgeStateMonitor`).
-- **Contracts**: Updated deployment and configuration scripts in `contracts/script/`.
-- **Project**: Added `.env.example` for environment variable template.
+### Backend Initialization
+- Launched FastAPI aggregation service with Docker containerization support.
+- Implemented async scatter-gather data fetching pattern for external API dependencies.
+- Integrated circuit breaker resilience layer via `pybreaker`.
+- Developed initial economic modeling for breakeven calculations.
 
-### Changed
-- **Contracts**: Refactored risk scoring libraries.
-- **Project**: Updated `package.json` and `package-lock.json` dependencies.
-- **Project**: Updated `tsconfig.json` and Next.js configuration (`next.config.ts`).
+### Smart Contract Integration
+- Deployed `BridgeRegistry` and `BridgeHealthChecker` for on-chain infrastructure monitoring.
+- Established libraries for cross-chain risk classification.
+
+## [1.0.0] - 2025-12-19
+
+### Initial Release
+- Core Next.js application framework established.
+- Basic wallet integration via RainbowKit.
+- Preliminary yield aggregation logic for Ethereum and L2 networks.

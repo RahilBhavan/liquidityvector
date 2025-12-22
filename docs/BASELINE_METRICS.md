@@ -1,16 +1,25 @@
-# Baseline Metrics Report
-**Date:** Sat Dec 20 10:43:33 PST 2025
+# Technical Specification: Baseline Metrics
+
+## Overview
+This document records the baseline operational metrics for the Liquidity Vector system as of December 20, 2025. These values serve as the reference point for future performance optimization and regression testing.
 
 ## 1. Service Health
+Standard health check response verifying circuit breaker status and semantic versioning.
 ```json
-{"status":"healthy","version":"1.0.0"}
+{
+  "status": "healthy",
+  "version": "1.0.0"
+}
 ```
-## 2. Resource Usage (Process)
-```bash
-rahilbhavan      51438   0.4  0.1 412059248  22560   ??  SN   Thu08PM   1:27.73 /opt/anaconda3/bin/python3.13 /opt/anaconda3/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000
-```
-## 3. Port Connectivity
-```bash
-COMMAND     PID        USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
-python3.1 51438 rahilbhavan   10u  IPv4 0x3617b9ba154c85ab      0t0  TCP *:irdmi (LISTEN)
-```
+
+## 2. Resource Utilization (Process Baseline)
+Backend process footprint under idle state on a macOS/Darwin environment.
+- **Process**: /opt/anaconda3/bin/uvicorn api.main:app
+- **CPU Usage**: 0.4%
+- **Memory Usage**: 0.1% (RSS: 22,560 KB)
+
+## 3. Network Configuration
+Verification of active listener ports for internal and external communication.
+- **Port 8000**: API Service (LISTEN)
+- **Protocol**: TCP IPv4
+- **Interface**: Wildcard (*)

@@ -1,64 +1,61 @@
-# Contributing to Liquidity Vector
+# Development Workflow & Contribution Guidelines
 
-We welcome contributions from the community! Whether you're a developer, designer, or security researcher, your help is valuable.
+## Prerequisites
+- **Node.js**: 20.x or higher
+- **Python**: 3.11 or higher
+- **Docker**: 24.0 or higher
+- **Foundry**: Required for smart contract testing
 
-## 🛠️ Development Setup
+## Local Environment Setup
 
-### Prerequisites
-- Node.js 20+
-- Python 3.11+
-- Docker (Optional but recommended)
+### 1. Repository Initialization
+```bash
+git clone https://github.com/RahilBhavan/liquidityvector_gemini.git
+cd liquidityvector_gemini
+```
 
-### Quick Start
-1.  **Fork & Clone**:
-    ```bash
-    git clone https://github.com/your-username/liquidityvector_gemini.git
-    cd liquidityvector_gemini
-    ```
+### 2. Backend Configuration
+```bash
+cd api
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+```
 
-2.  **Environment Variables**:
-    Copy `.env.example` to `.env.local` (Frontend) and `api/.env` (Backend).
-    ```bash
-    cp .env.example .env.local
-    cp .env.example api/.env
-    ```
+### 3. Frontend Configuration
+```bash
+# In the root directory
+npm install
+cp .env.example .env.local
+```
 
-3.  **Run Locally**:
-    ```bash
-    # Terminal 1: Backend
-    cd api && pip install -r requirements.txt && uvicorn main:app --reload
+## Standards & Quality Control
 
-    # Terminal 2: Frontend
-    npm install && npm run dev
-    ```
+### TypeScript Standards
+- **Strict Mode**: `strict: true` must be maintained in `tsconfig.json`.
+- **Formatting**: Enforced via ESLint and Prettier.
+- **Component Pattern**: Use functional components with explicit prop types.
 
----
+### Python Standards
+- **Style**: Follow PEP 8 guidelines.
+- **Formatting**: Enforced via Black.
+- **Type Safety**: Pydantic models must be used for all API request/response schemas.
 
-## 📐 Coding Standards
+### Testing Requirements
+- **Unit Tests**: Required for any new economic logic in `core/economics/`.
+- **Integration Tests**: Required for new API endpoints in `api/tests/`.
+- **Verification**: Run `pytest` and `npm test` before submitting a Pull Request.
 
-### Frontend (TypeScript/React)
-*   **Style**: We use **Prettier** and **ESLint**. Run `npm run lint` before committing.
-*   **Components**: Use functional components. Prefer Tailwind CSS utility classes over custom CSS.
-*   **State**: Use `React Query` for server state and `Context` for global app state. Avoid Redux unless absolutely necessary.
+## Contribution Workflow
+1. **Branching**: Create a feature branch from `develop`.
+   - `feat/feature-name`
+   - `fix/bug-name`
+2. **Commits**: Use conventional commit messages (e.g., `feat: add new bridge adapter`).
+3. **Pull Requests**: Submit PRs against the `develop` branch. Ensure the CI pipeline passes.
 
-### Backend (Python)
-*   **Style**: Follow **PEP 8**. We use `black` for formatting.
-*   **Type Hints**: All function signatures must have type annotations.
-*   **Testing**: Write unit tests for all new logic. Run `pytest` to verify.
-
----
-
-## 🤝 Workflow
-
-1.  **Find an Issue**: Check the [Issues](https://github.com/RahilBhavan/liquidityvector_gemini/issues) tab. Look for "Good First Issue" tags.
-2.  **Create a Branch**: `git checkout -b feature/my-cool-feature`.
-3.  **Commit**: Use conventional commits (e.g., `feat: add new bridge adapter`, `fix: correct gas calculation`).
-4.  **Test**: Ensure the build passes (`npm run build` and `pytest`).
-5.  **Pull Request**: Open a PR against `main`. Describe your changes clearly.
-
----
-
-## 🔒 Security Policy
-
-If you discover a security vulnerability, please **DO NOT** open a public issue.
-Email `security@liquidityvector.com` (placeholder) immediately. We define "Critical" issues as those that could lead to incorrect financial advice causing loss of user funds.
+## Definition of Done
+- [ ] Code is formatted and linted.
+- [ ] Documentation is updated to reflect changes.
+- [ ] Unit tests cover new logic (min 80% coverage).
+- [ ] Build artifact success verified via Docker.

@@ -1,54 +1,38 @@
-# Rollback Procedure
+# Operational Specification: Rollback Procedure
 
-> **WARNING:** Execute this procedure only when a critical incident is confirmed in production.
+## Overview
+This document outlines the emergency procedures for reverting the Liquidity Vector system to a stable state in the event of a critical production failure.
 
-## 1. Immediate Mitigation (Code Revert)
+## 1. Application Logic Reversion
 
-**Trigger:** Critical bug in application logic (frontend/backend).
+### Trigger
+Critical regression in financial calculation models or frontend state corruption.
 
-1.  **Identify Last Stable Tag:**
-    ```bash
-    git fetch --tags
-    git tag --list
-    # Identify the previous stable version (e.g., v1.0.0)
-    ```
+### Procedure
+1. **Identify Stable Release**: Locate the most recent stable Git tag (e.g., `v1.1.0`).
+2. **Revert Working Branch**:
+```bash
+git checkout main
+git reset --hard v1.1.0
+git push origin main --force
+```
+3. **Verify Deployment**: Monitor the CI/CD pipeline to ensure the build and test stages complete successfully.
 
-2.  **Revert Main Branch:**
-    ```bash
-    # Checkout main and ensure it's up to date
-    git checkout main
-    git pull origin main
-    
-    # Revert the merge commit of the faulty release
-    # (Assuming the release was merged via PR)
-    git revert -m 1 <MERGE_COMMIT_HASH>
-    
-    # Push the reversion to trigger the pipeline
-    git push origin main
-    ```
+## 2. Infrastructure Reversion
 
-3.  **Verify Rollback:**
-    *   Monitor CI/CD pipeline for successful deployment.
-    *   Verify application health via `/health` endpoint.
+### Trigger
+Misconfiguration of environment variables, Docker image corruption, or networking failures.
 
-## 2. Infrastructure Rollback
+### Procedure
+1. **Container Re-deployment**: Manually pull the previous stable image from the registry.
+```bash
+docker pull ghcr.io/your-org/liquidityvector-api:v1.1.0
+docker-compose -f docker-compose.prod.yml up -d
+```
+2. **Environment Variable Audit**: Revert all recent changes to the `.env` configuration file and restart services.
 
-**Trigger:** Infrastructure configuration error (e.g., bad env var, wrong Docker image).
-
-1.  **Redeploy Previous Artifact:**
-    *   **Manual Trigger (GitHub Actions):**
-        1.  Go to **Actions** tab.
-        2.  Select **CI Pipeline**.
-        3.  Find the workflow run for the *previous stable tag*.
-        4.  Click **Re-run jobs**.
-
-## 3. Database Recovery
-
-**Trigger:** Data corruption or accidental deletion.
-
-*   **Status:** Manual recovery required.
-*   **Procedure:**
-    1.  Locate latest backup in cloud provider console (AWS S3 / GCP Storage / etc.).
-    2.  Stop the application to prevent new writes.
-    3.  Restore database from backup snapshot.
-    4.  Restart application.
+## 3. Data Integrity & Verification
+Following any rollback, the following verification steps must be executed:
+1. **Health Check**: Validate system state via `GET /health`.
+2. **Integration Verification**: Execute a sample `POST /analyze` request to ensure gas and yield data aggregation is functional.
+3. **Log Audit**: Review centralized logging for persistent 5xx errors.
