@@ -1,0 +1,12 @@
+{
+  "$schema": "https://railway.app/split-config.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile.frontend"
+  },
+  "deploy": {
+    "numReplicas": 1,
+    "sleepService": false,
+    "restartPolicyType": "ON_FAILURE"
+  }
+}
