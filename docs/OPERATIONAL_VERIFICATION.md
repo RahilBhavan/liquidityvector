@@ -6,7 +6,7 @@ This document specifies the validation procedures for confirming the integrity o
 ## 1. Alerting Pipeline Verification
 Verify that critical service errors are correctly propagated through the logging and alerting system.
 ```bash
-curl -X GET https://api.yourdomain.com/debug/test-alert
+curl -X GET https://api.rahilbhavan.com/debug/test-alert
 ```
 **Success Criteria**: Receipt of a critical event notification in the configured monitoring channel containing the string "ALERT_VERIFICATION_TEST".
 
@@ -15,7 +15,7 @@ Verify the deterministic output of the Breakeven Engine via a controlled request
 ```bash
 curl -X POST -H "Content-Type: application/json" \
      -d '{"capital": 1000, "current_chain": "Ethereum", "target_chain": "Arbitrum", "pool_apy": 10.0}' \
-     https://api.yourdomain.com/analyze
+     https://api.rahilbhavan.com/analyze
 ```
 **Success Criteria**: JSON response containing valid numerical values for `breakeven_hours` and `total_cost`.
 

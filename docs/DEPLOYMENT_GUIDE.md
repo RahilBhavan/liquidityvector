@@ -55,3 +55,13 @@ docker run -d -p 3000:3000 liquidityvector-web:latest
 Active monitoring is conducted via the `/health` endpoint on the API layer.
 - **Circuit State**: Exposes if external API circuits (Li.Fi, DeFiLlama) are open or closed.
 - **Latency Monitoring**: API request timers track external provider performance.
+
+## Verification
+1.  **Health Check**:
+    ```bash
+    curl https://api.rahilbhavan.com/health
+    ```
+2.  **Alert Verification**:
+    ```bash
+    curl https://api.rahilbhavan.com/debug/test-alert
+    ```

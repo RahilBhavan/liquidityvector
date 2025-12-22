@@ -23,15 +23,14 @@ The system employs a hybrid microservices topology:
 
 ## 🚀 Deployment
 
-### **Docker (Recommended)**
-Run the entire stack (Frontend + API) with a single command:
+### **Docker Deployment (Recommended)**
 ```bash
 docker-compose -f docker-compose.prod.yml up -d --build
 ```
-- **UI**: [http://localhost:3000](http://localhost:3000)
-- **API**: [http://localhost:8000](http://localhost:8000)
+- **Frontend**: [http://localhost:3000](http://localhost:3000)
+- **API (Swagger)**: [https://api.rahilbhavan.com/docs](https://api.rahilbhavan.com/docs)
 
-### **Railway Deployment**
+### **Manual Development Setup**
 This project is optimized for deployment on [Railway](https://railway.app/).
 
 1.  **Create Two Services**: Create one service for the Frontend and one for the Backend.
