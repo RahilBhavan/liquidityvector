@@ -8,9 +8,15 @@ Provides real-time yield data, gas calculations, and route analysis.
 import logging
 import re
 import os
+import contextlib
 from contextlib import asynccontextmanager
+
+# Performance Optimizations
+import uvloop
+from fastapi.responses import ORJSONResponse
+from fastapi.middleware.gzip import GZipMiddleware
+
 from fastapi import FastAPI, HTTPException, Request, APIRouter
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -21,7 +27,12 @@ from .models import AnalyzeRequest, RouteCalculation, YieldResponse, Chain
 from .services import get_service, cleanup_service
 from .exceptions import ExternalAPIError, InsufficientLiquidityError, BridgeRouteError
 from .resilience import get_circuit_states
-from .config import settings
+# Updated config import
+from .core.config import settings
+from .core.cache import RedisCache
+
+# Install uvloop for faster event loop
+uvloop.install()
 
 # Configure structured logging
 logging.basicConfig(
@@ -42,7 +53,7 @@ health_router = APIRouter()
 @health_router.get("/health")
 async def health_check():
     logger.info("Health check endpoint reached")
-    return {"status": "ok", "platform": "railway"}
+    return {"status": "ok", "platform": settings.platform}
 
 @health_router.get("/")
 async def root_check():
@@ -52,6 +63,15 @@ async def root_check():
 async def lifespan(app: FastAPI):
     """Manage application lifecycle."""
     logger.info("Initializing Liquidity Vector API...")
+    
+    # Initialize Redis
+    try:
+        cache = RedisCache.get_instance()
+        await cache.redis.ping()
+        logger.info("Redis connection established.")
+    except Exception as e:
+        logger.error(f"Redis connection failed: {e}")
+
     # Validate security but don't crash startup
     try:
         settings.validate_production_security()
@@ -59,6 +79,8 @@ async def lifespan(app: FastAPI):
         logger.error(f"Security validation failed: {e}")
     yield
     await cleanup_service()
+    if RedisCache._instance:
+        await RedisCache._instance.close()
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add security headers to all responses."""
@@ -73,7 +95,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 app = FastAPI(
     title="Liquidity Vector API",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    default_response_class=ORJSONResponse
 )
 
 # 1. Include health router BEFORE main middleware
@@ -84,6 +107,7 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # 3. Add Middlewares
+app.add_middleware(GZipMiddleware, minimum_size=1000) # Compress responses > 1KB
 app.add_middleware(SecurityHeadersMiddleware)
 
 origins = [str(origin) for origin in settings.ALLOWED_ORIGINS]

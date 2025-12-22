@@ -9,8 +9,15 @@ services:
     environment:
       - ENVIRONMENT=development
       - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+      - REDIS_URL=redis://redis:6379/0
       # Add other environment variables here or use an env_file
     volumes:
       - .:/app/api
     working_dir: /app
     command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    restart: always

@@ -2,39 +2,28 @@ import type { Config } from 'tailwindcss';
 
 const config: Config = {
   content: [
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
-    './lib/**/*.{js,ts,jsx,tsx,mdx}',
-    './hooks/**/*.{js,ts,jsx,tsx,mdx}',
-    './providers/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/lib/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/features/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/hooks/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/providers/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {
       colors: {
-        // iOS/macOS System Colors approximation
-        background: '#F5F5F7',
-        surface: '#FFFFFF',
-        'surface-secondary': '#F2F2F7',
-        primary: '#1D1D1F', // Text primary
-        secondary: '#86868B', // Text secondary
-        accent: '#0071E3', // Action Blue
-        success: '#34C759',
-        warning: '#FF9F0A',
-        critical: '#FF3B30',
-        divider: 'rgba(0, 0, 0, 0.1)',
+        'paper-white': '#F4F1EA',
+        'sumi-black': '#111111',
+        'intl-orange': '#FF2E00',
+        'cobalt-blue': '#0038A8',
+        'matchbox-green': '#005C42',
+        'kraft-brown': '#C7B299',
+        background: '#F4F1EA',
+        foreground: '#111111',
       },
       fontFamily: {
-        sans: ['-apple-system', 'BlinkMacSystemFont', '"Inter"', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
-        mono: ['"SF Mono"', '"Menlo"', '"Monaco"', '"Courier New"', 'monospace'],
-      },
-      boxShadow: {
-        'soft-sm': '0 2px 8px rgba(0, 0, 0, 0.04)',
-        'soft-md': '0 8px 24px rgba(0, 0, 0, 0.06)',
-        'soft-lg': '0 16px 48px rgba(0, 0, 0, 0.12)',
-        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
-      },
-      backdropBlur: {
-        xs: '2px',
+        sans: ['"Helvetica Now"', '"Inter"', 'sans-serif'],
+        mono: ['"Space Mono"', '"Courier New"', 'monospace'],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out forwards',
@@ -52,7 +41,9 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require("tailwindcss-animate")
+  ],
 };
 
 export default config;

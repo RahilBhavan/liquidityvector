@@ -11,8 +11,10 @@ from typing import Optional, Dict
 from .base_service import BaseService
 from .models import Chain, GasCostEstimate
 from .constants import NATIVE_TOKEN_IDS, USDC_ADDRESSES, BASE_GAS_LIMITS
-from .config import settings
+from .constants import NATIVE_TOKEN_IDS, USDC_ADDRESSES, BASE_GAS_LIMITS
+from .core.config import settings
 from .exceptions import ExternalAPIError
+
 from .resilience import (
     rpc_breaker, coingecko_breaker, gas_price_cache,
     native_price_cache, fee_history_cache, call_async,

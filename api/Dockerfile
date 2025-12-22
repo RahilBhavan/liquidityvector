@@ -48,7 +48,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # Copy Logic
 COPY api/ ./api
-COPY core/ ./core
+
 
 # Fix permissions
 RUN chown -R appuser:appuser /app

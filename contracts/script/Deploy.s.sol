@@ -5,6 +5,8 @@ import {Script, console} from "forge-std/Script.sol";
 import {BridgeRegistry} from "../src/core/BridgeRegistry.sol";
 import {BridgeStateMonitor} from "../src/core/BridgeStateMonitor.sol";
 import {BridgeHealthChecker} from "../src/core/BridgeHealthChecker.sol";
+import {LiquidityVault} from "../src/LiquidityVault.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title DeployScript
@@ -39,6 +41,19 @@ contract DeployScript is Script {
         );
         console.log("BridgeHealthChecker deployed at:", address(checker));
 
+        // 4. Deploy Liquidity Vault
+        address usdc = vm.envAddress("USDC_ADDRESS");
+        address feeRecipient = vm.envAddress("FEE_RECIPIENT");
+        
+        LiquidityVault vault = new LiquidityVault(
+            IERC20(usdc),
+            "Liquidity Vector Vault",
+            "lvUSDC",
+            multisig,
+            feeRecipient
+        );
+        console.log("LiquidityVault deployed at:", address(vault));
+
         vm.stopBroadcast();
 
         // Output deployment summary
@@ -48,6 +63,7 @@ contract DeployScript is Script {
         console.log("Registry:", address(registry));
         console.log("Monitor:", address(monitor));
         console.log("Checker:", address(checker));
+        console.log("LiquidityVault:", address(vault));
         console.log("Admin Multisig:", multisig);
     }
 }

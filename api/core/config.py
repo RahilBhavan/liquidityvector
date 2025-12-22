@@ -8,7 +8,7 @@ from typing import List, Dict, Any, Union
 import logging
 import os
 
-from .models import Chain
+from ..models import Chain
 
 logger = logging.getLogger("liquidityvector.config")
 
@@ -34,6 +34,9 @@ class Settings(BaseSettings):
 
     # Request timeout in seconds
     REQUEST_TIMEOUT: float = 10.0
+
+    # Redis Configuration
+    REDIS_URL: str = "redis://redis:6379/0"
 
     # RPC Endpoints - can be overridden via environment variables
     # Format: RPC_URL_ETHEREUM, RPC_URL_ARBITRUM, etc.

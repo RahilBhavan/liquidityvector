@@ -1,75 +1,106 @@
-# Liquidity Vector - Cross-Chain Yield Arbitrage Engine
+# Liquidity Vector
+### Cross-Chain Yield Arbitrage Engine
 
-## Purpose & Scope
-Liquidity Vector is a deterministic financial execution engine designed to quantify and optimize cross-chain yield arbitrage strategies. The system unbundles the "friction trap" of DeFi rotations by calculating institutional-grade breakeven horizons, accounting for round-trip gas costs, bridge slippage, and time-to-liquidity. Its scope is limited to stablecoin yield analysis across EVM-compatible networks, providing a binary decision framework for capital rotation.
+![Status](https://img.shields.io/badge/Status-Operational-005C42) ![Version](https://img.shields.io/badge/Version-2.0.0-0038A8) ![License](https://img.shields.io/badge/License-MIT-C7B299)
 
-## Core Architecture
-The system employs a hybrid microservices topology:
-- **Computation Engine (FastAPI/Python 3.11)**: Orchestrates asynchronous data aggregation from multiple RPC providers and DeFi primitives. Implements vectorized economic modeling for sub-millisecond profitability simulations.
-- **Presentation Layer (Next.js 15)**: A human-centered interface optimized for cognitive focus, utilizing server-side rendering (SSR) for shell integrity and client-side hydration for real-time interactivity.
-- **Data Layer (Stateless)**: Real-time fanned-out queries to DeFiLlama (Yield), Li.Fi (Bridging), and decentralized RPC nodes (Gas/State).
+Liquidity Vector is a deterministic financial execution engine designed to optimize cross-chain yield arbitrage strategies. The system unbundles the "friction trap" of DeFi rotations by calculating institutional-grade breakeven horizons.
 
-## Key Technical Decisions
-- **Python for Economic Core**: Selected for NumPy-based vectorization capabilities, enabling the simultaneous simulation of 30+ capital/time scenarios in under 2ms.
-- **Asyncio Scatter-Gather**: Backend service utilizes non-blocking I/O to query 6+ external endpoints concurrently, reducing total request latency from ~4.5s to <800ms.
-- **Statelessness**: The system maintains no persistent database for core analytics, ensuring infinite horizontal scalability and simplified deployment cycles.
-- **Circuit Breaker Integration**: Employs the pybreaker pattern to mitigate cascading failures from upstream RPC or API timeouts.
-
-## Prerequisites & Dependencies
-- **Runtime**: Docker 24.0+, Docker Compose 2.20+
-- **Backend**: Python 3.11, FastAPI 0.109+, Httpx 0.26+
-- **Frontend**: Node.js 20.x, Next.js 15.1, Tailwind CSS 3.4
-- **Blockchain**: Alchemy/Infura API keys (optional), WalletConnect Project ID
-
-## 🚀 Deployment
-
-### **Docker Deployment (Recommended)**
-```bash
-docker-compose -f docker-compose.prod.yml up -d --build
-```
-- **UI (Production)**: [https://liquidityvector.rahilbhavan.com](https://liquidityvector.rahilbhavan.com)
-- **UI (Local)**: [http://localhost:3000](http://localhost:3000)
-- **API (Swagger)**: [https://api.rahilbhavan.com/docs](https://api.rahilbhavan.com/docs)
-
-### **Manual Development Setup**
-This project is optimized for deployment on [Railway](https://railway.app/).
-
-1.  **Create Two Services**: Create one service for the Frontend and one for the Backend.
-2.  **Frontend Configuration**:
-    - **Source**: Root directory.
-    - **Dockerfile**: `Dockerfile.frontend`.
-    - **Env Vars**: Set `NEXT_PUBLIC_BACKEND_URL` to your Backend's Railway URL.
-3.  **Backend Configuration**:
-    - **Source**: `./api` directory.
-    - **Dockerfile**: `api/Dockerfile`.
-    - **Env Vars**: Set `ALLOWED_ORIGINS` to your Frontend's Railway URL.
+This version (v2.0 "Digital Philately") introduces a complete redesign featuring a Risograph-inspired aesthetic, improved backend performance via Redis/uvloop, and a simplified ERC-4626 vault architecture.
 
 ---
 
-## 🔧 Environment Configuration
+## 🎨 Design System: "Digital Philately"
+The interface mimics high-precision printed artifacts (stamps, tickets, labels) on a neutral paper background.
+- **Palette**: Paper White (`#F4F1EA`), Sumi Black (`#111111`), International Orange (`#FF2E00`).
+- **Typography**: `Helvetica` (Headlines) and `Space Mono` (Data).
+- **Physics**: CSS-based "Sawtooth" edges for stamp components.
 
-## Development Workflow
-- **Linting**: Enforced via ESLint (Frontend) and Black (Backend).
-- **Testing**: Frontend unit tests via Vitest; Backend integration tests via Pytest.
-- **CI/CD**: GitHub Actions pipeline validates linting, test coverage, and build success on every PR to `main` or `develop`.
+## 🏗 Architecture
 
-## Deployment Topology
-The system is designed for containerized orchestration.
-- **Frontend Container**: Serving standalone Next.js build via Node.js runner.
-- **API Container**: Serving FastAPI via Uvicorn with multiple worker processes.
-- **Reverse Proxy**: Nginx (optional) for TLS termination and header normalization.
+### Hybrid Topology
+- **Frontend (Presentation)**: Next.js 15 (App Router), Zustand, TanStack Query, Tailwind CSS. Hosted on Vercel.
+- **Backend (Computation)**: Python 3.11, FastAPI, uvloop, orjson, Redis. Hosted on Railway.
+- **Smart Contracts (Execution)**: Solidity 0.8.24, Foundry, ERC-4626.
 
-## Monitoring & Observability
-- **Health Checks**: `/health` endpoint exposes circuit breaker states and service uptime.
-- **Logging**: Structured JSON logging implemented in the FastAPI backend for ELK/Datadog ingestion.
-- **Performance**: Lighthouse metrics monitored for Core Web Vitals (Target: LCP < 1.2s, CLS 0.00).
+### Directory Structure
+```
+/
+├── api/                    # FastAPI Backend
+│   ├── core/               # Configuration & Cache logic
+│   ├── ...
+├── src/                    # Frontend (Next.js)
+│   ├── features/           # Feature Modules (Dashboard, etc)
+│   ├── components/         # Shared UI (including StampCard)
+│   ├── app/                # App Router
+├── contracts/              # Foundry Project
+│   ├── src/                # Smart Contracts (LiquidityVault)
+│   ├── script/             # Deployment Scripts
+│   ├── test/               # Forge Tests
+└── ...
+```
 
-## Security Considerations
-- **V-Score Algorithm**: A 100-point deterministic risk model evaluating bridge architecture (25%), protocol maturity (20%), TVL depth (20%), exploit history (20% penalty), contract verification (10%), and chain maturity (5%).
-- **CORS Policy**: Strictly enforced via `ALLOWED_ORIGINS` environment variables.
-- **Input Validation**: Pydantic models enforce strict schema validation for all API ingress points.
+---
 
-## Performance Characteristics
-- **Matrix Generation**: < 2ms for a 6x5 profitability grid.
-- **Request Latency**: p95 < 800ms under standard network conditions.
-- **Throughput**: ~500 req/sec per backend instance (t3.medium baseline).
+## 🚀 Getting Started
+
+### Prerequisites
+- Docker & Docker Compose
+- Node.js 20+
+- Foundry (for contracts)
+
+### Development
+1. **Infrastructure (Redis)**
+   ```bash
+   docker-compose up -d redis
+   ```
+
+2. **Backend**
+   ```bash
+   cd api
+   pip install -r requirements.txt
+   uvicorn main:app --reload
+   ```
+
+3. **Frontend**
+   ```bash
+   npm install
+   npm run dev
+   ```
+   Visit `http://localhost:3000`.
+
+4. **Smart Contracts**
+   ```bash
+   cd contracts
+   forge build
+   forge test
+   ```
+
+---
+
+## 📦 Deployment
+
+### Backend (Railway)
+The `api/Dockerfile` is optimized for production. Ensure the following environment variables are set in Railway:
+- `REDIS_URL`: Connection string for Redis.
+- `ALLOWED_ORIGINS`: Comma-separated list of allowed frontend origins.
+
+### Frontend (Vercel)
+The project is configured for Vercel. Ensure the following environment variables are set:
+- `NEXT_PUBLIC_BACKEND_URL`: URL of your deployed Railway backend.
+- `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`: Your WalletConnect ID.
+
+### Smart Contracts
+Use the provided script to deploy the `LiquidityVault` and monitoring infrastructure:
+```bash
+forge script contracts/script/Deploy.s.sol --rpc-url <RPC_URL> --broadcast
+```
+
+---
+
+## 🔒 Security
+- **V-Score**: Proprietary risk scoring algorithm for protocol monitoring.
+- **CSP**: Strict Content Security Policy headers enabled.
+- **Audits**: Contracts are currently **UNAUDITED**. Use at your own risk.
+
+## 📄 License
+MIT

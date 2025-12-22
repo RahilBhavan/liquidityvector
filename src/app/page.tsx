@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Header from './components/Header';
-import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
+import { Header } from '@/components/layout/Header';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { DashboardView } from '@/features/dashboard/components/DashboardView';
 import { useAutoCapital } from '@/hooks/useAutoCapital';
 import { useAccount, useChainId } from 'wagmi';
 import { CHAIN_ID_MAP } from '@/lib/wagmi.config';
@@ -45,22 +45,24 @@ export default function Home() {
   }, [mounted, isConnected, chainId]);
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-background text-primary font-sans">
-      <Header
-        walletBalance={walletBalanceUsd}
-        canPopulate={canPopulate}
-        onPopulateCapital={populateFromWallet}
+    <div className="flex h-screen w-screen bg-paper-white text-sumi-black font-sans overflow-hidden">
+      {/* Fixed Sidebar */}
+      <Sidebar
+        settings={settings}
+        setSettings={setSettings}
+        isFetching={isFetching}
       />
-      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-        <aside className="w-full md:w-80 h-auto md:h-full flex-shrink-0">
-           <Sidebar
-             settings={settings}
-             setSettings={setSettings}
-             isFetching={isFetching}
-           />
-        </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+        <Header
+          walletBalance={walletBalanceUsd}
+          canPopulate={canPopulate}
+          onPopulateCapital={populateFromWallet}
+        />
+
         <main className="flex-1 h-full overflow-hidden relative">
-          <Dashboard
+          <DashboardView
             settings={settings}
             setFetching={setIsFetching}
             walletAddress={address}

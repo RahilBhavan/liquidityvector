@@ -94,6 +94,9 @@ jobs:
     - name: Build Contracts
       run: forge build
       working-directory: ./contracts
+    - name: Run Contract Tests
+      run: forge test
+      working-directory: ./contracts
 
   deploy:
     needs: [frontend-build, backend-quality, contracts-build]
