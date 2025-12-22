@@ -27,7 +27,7 @@ Calculates the exact **Breakeven Horizon** (in days/hours) for any rotation. It 
 
 ### 🛡️ Security Dossiers (Real-World Intel)
 Moves beyond raw numbers to provide qualitative risk assessment.
-- **V-Score**: A 1-100 security rating based on bridge architecture, TVL depth, and Lindy Effect.
+- **V-Score**: A rigorous 1-100 deterministic security rating based on 6 weighted factors: Bridge Architecture, Protocol Age, TVL Depth, Exploit History, Contract Verification, and Chain Maturity.
 - **Historical Context**: Built-in data on major historical exploits (e.g., Multichain $126M, Wormhole $320M) to warn users about fragile infrastructure.
 
 ### 🍏 Apple-Inspired Minimalist UI
