@@ -30,7 +30,7 @@
 ### Technical Complexity Dimensions
 *   **Real-Time Data Synchronization:** The system must normalize disparate data formats from EVM-compatible chains (e.g., different decimal precisions, gas pricing models like L1-data-fees on Optimism) into a unified `RouteCalculation` model instantly.
 *   **Reliability Under Volatility:** During periods of high network congestion, RPC endpoints often timeout. The backend's **asyncio** tasks are wrapped in retry logic with exponential backoff to ensure data integrity even when the underlying infrastructure is unstable.
-*   **Risk Scoring Sophistication:** The risk engine doesn't just look at "Audit Status." It aggregates **TVL depth**, **Protocol Age**, and **Historical Exploit Data** to calculate a weighted "Vector Score." This requires maintaining a constantly updated knowledge base of DeFi security events.
+*   **Risk Scoring Sophistication:** The system implements a rigorous **100-point risk model** (`core/risk/engine.py`) rather than relying on simple "Audit Status." It evaluates six weighted factors: **Bridge Architecture** (25%), **Protocol Age** (20%), **TVL Depth** (20%), **Exploit History** (20% penalty), **Contract Verification** (10%), and **Chain Maturity** (5%). This deterministic approach replaces arbitrary "trust scores" with a calculable, transparent metric.
 
 ### Product Complexity Dimensions
 *   **Conceptual Translation:** The biggest challenge was simplifying **"Net Yield after Gas & Bridging over 30 Days"** into a single number. The dashboard abstracts this into a "Breakeven Horizon" (e.g., "14 Days"), making the decision binary for the user: *"Will I stay in this pool for more than 14 days? Yes/No."*
