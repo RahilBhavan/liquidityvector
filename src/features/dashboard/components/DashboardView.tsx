@@ -3,9 +3,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Pool, UserSettings, RouteCalculation } from '@/types';
 import { apiService } from '@/lib/services/apiService';
-import { RefreshCw, TrendingUp, Clock, ArrowRight } from 'lucide-react';
+import { RefreshCw, TrendingUp, Clock, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { StampCard } from '@/components/ui/stamp-card';
 import { EmptyState } from '@/components/ui/empty-state';
+import { ProfitabilityMatrix } from '@/components/ui/profitability-matrix';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 
@@ -20,16 +21,16 @@ export function DashboardView({ settings, setFetching, walletAddress }: Dashboar
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [hasAttempted, setHasAttempted] = useState(false);
+    const [expandedRouteIndex, setExpandedRouteIndex] = useState<number | null>(null);
 
     const calculateStrategies = useCallback(async () => {
         setLoading(true);
         setFetching(true);
         setError(null);
         setHasAttempted(true);
+        setExpandedRouteIndex(null);
 
         if (!walletAddress) {
-            // setError("Please connect your wallet to view route calculations.");
-            // Don't show error, just empty state with prompt
             setLoading(false);
             setFetching(false);
             return;
@@ -67,12 +68,11 @@ export function DashboardView({ settings, setFetching, walletAddress }: Dashboar
         }
     }, [settings.capital, settings.currentChain, settings.riskTolerance, walletAddress, setFetching]);
 
-    // Initial load? Maybe not, better to let user initiate or wait for wallet
-    // useEffect(() => {
-    //     if (walletAddress) calculateStrategies();
-    // }, [calculateStrategies, walletAddress]);
-
     const showEmptyState = !loading && (routes.length === 0 || error || !walletAddress);
+
+    const toggleExpand = (index: number) => {
+        setExpandedRouteIndex(expandedRouteIndex === index ? null : index);
+    };
 
     return (
         <div className="p-8 space-y-8 h-full overflow-y-auto bg-paper-white">
@@ -130,17 +130,20 @@ export function DashboardView({ settings, setFetching, walletAddress }: Dashboar
                     ) : (
                         <motion.div
                             key="results"
+                            layout
                             className="grid grid-cols-1 gap-6"
                         >
                             {routes.map((route, i) => {
                                 const isBest = i === 0;
                                 const isHighRisk = route.riskLevel > settings.riskTolerance;
+                                const isExpanded = expandedRouteIndex === i;
 
                                 if (isHighRisk && !isBest) return null;
 
                                 return (
                                     <motion.div
                                         key={`${route.targetPool.pool}-${i}`}
+                                        layout
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: i * 0.1 }}
@@ -148,9 +151,11 @@ export function DashboardView({ settings, setFetching, walletAddress }: Dashboar
                                         <StampCard
                                             variant={isBest ? "blue" : "default"}
                                             className={cn(
-                                                "group transition-all hover:-translate-y-1 neo-card shadow-md hover:shadow-lg",
-                                                isBest ? "border-cobalt-blue" : ""
+                                                "group transition-all neo-card shadow-md hover:shadow-lg cursor-pointer",
+                                                isBest ? "border-cobalt-blue" : "",
+                                                isExpanded ? "ring-2 ring-offset-2 ring-sumi-black" : ""
                                             )}
+                                            onClick={() => toggleExpand(i)}
                                         >
                                             <div className="flex flex-col md:flex-row justify-between gap-6">
 
@@ -203,15 +208,39 @@ export function DashboardView({ settings, setFetching, walletAddress }: Dashboar
                                                     <motion.button
                                                         whileHover={{ scale: 1.05 }}
                                                         whileTap={{ scale: 0.95 }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            // Handle execute logic here
+                                                        }}
                                                         className={cn(
-                                                            "flex items-center gap-2 px-4 py-2 font-mono text-xs font-bold uppercase border-2 transition-all rounded-[var(--radius)]",
+                                                            "flex items-center gap-2 px-4 py-2 font-mono text-xs font-bold uppercase border-2 transition-all rounded-[var(--radius)] mb-2",
                                                             isBest ? "bg-white text-cobalt-blue border-white hover:bg-white/90" : "bg-sumi-black text-white border-sumi-black hover:bg-sumi-black/90"
                                                         )}
                                                     >
                                                         Execute <ArrowRight className="w-3 h-3" />
                                                     </motion.button>
+                                                    <div className="text-[10px] font-bold uppercase opacity-60 flex items-center gap-1">
+                                                        {isExpanded ? "Less Info" : "More Info"}
+                                                        {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                                    </div>
                                                 </div>
                                             </div>
+
+                                            {/* Expanded Content: Profitability Matrix */}
+                                            <AnimatePresence>
+                                                {isExpanded && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, height: 0 }}
+                                                        animate={{ opacity: 1, height: 'auto' }}
+                                                        exit={{ opacity: 0, height: 0 }}
+                                                        className="overflow-hidden"
+                                                    >
+                                                        <div className="pt-6 mt-6 border-t-2 border-current/10 border-dashed">
+                                                            <ProfitabilityMatrix matrix={route.profitabilityMatrix} />
+                                                        </div>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
                                         </StampCard>
                                     </motion.div>
                                 );

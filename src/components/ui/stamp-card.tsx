@@ -7,15 +7,14 @@ interface StampCardProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const StampCard = React.forwardRef<HTMLDivElement, StampCardProps>(
-    ({ className, variant = "default", sawtooth = true, children, ...props }, ref) => {
+    ({ className, variant = "default", sawtooth = false, children, ...props }, ref) => {
         return (
             <div
                 ref={ref}
                 className={cn(
                     "relative p-6 transition-all duration-200",
-                    "border-2 border-sumi-black shadow-none",
+                    "border-2 border-sumi-black rounded-[var(--radius)]",
                     sawtooth && "stamp-edge",
-                    // Variants applying internal coloring, but sawtooth mask handles the shape
                     variant === "default" && "bg-white text-sumi-black",
                     variant === "orange" && "bg-intl-orange text-white",
                     variant === "blue" && "bg-cobalt-blue text-white",
@@ -23,7 +22,6 @@ const StampCard = React.forwardRef<HTMLDivElement, StampCardProps>(
                 )}
                 {...props}
             >
-                {/* Optional decorative content could go here */}
                 {children}
             </div>
         )
