@@ -41,7 +41,12 @@ health_router = APIRouter()
 
 @health_router.get("/health")
 async def health_check():
+    logger.info("Health check endpoint reached")
     return {"status": "ok", "platform": "railway"}
+
+@health_router.get("/")
+async def root_check():
+    return {"status": "ok", "message": "Liquidity Vector API is running"}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
