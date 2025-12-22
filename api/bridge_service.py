@@ -4,13 +4,18 @@ from .base_service import BaseService
 from .models import Chain, BridgeMetadata, BridgeQuote, BridgeQuoteResult
 from .constants import CHAIN_IDS, USDC_ADDRESSES, BRIDGE_OPTIONS
 from .exceptions import ExternalAPIError
-from .resilience import lifi_breaker, bridge_quote_cache, call_async, CircuitBreakerError
+from .resilience import lifi_breaker, bridge_quote_cache, call_async
+from core.risk.engine import RiskEngine
 import httpx
 
 logger = logging.getLogger("liquidityvector.bridge_service")
 
 class BridgeService(BaseService):
     """Service for bridge quotes and risk analysis."""
+
+    def __init__(self, client: httpx.AsyncClient):
+        super().__init__(client)
+        self.risk_engine = RiskEngine()
 
     async def get_bridge_quote_v2(self, source: Chain, dest: Chain, amount_usd: float, wallet_address: str) -> BridgeQuoteResult:
         """Fetch bridge quote from Li.Fi."""
@@ -60,7 +65,7 @@ class BridgeService(BaseService):
             raise ExternalAPIError(f"Failed to get bridge quote: {e}")
 
     def get_bridge_risk(self, source: Chain, target: str, bridge_name: Optional[str] = None) -> dict:
-        """Calculate bridge risk score."""
+        """Calculate bridge risk score using the rigorous RiskEngine."""
         if source.value == target:
             meta = BridgeMetadata(name="Native", type="Native", age_years=10, tvl=0, has_exploits=False, base_time=0)
             return {"risk_score": 100, "bridge_name": "Native Transfer", "estimated_time": "Instant", "has_exploits": False, "bridge_metadata": meta}
@@ -68,18 +73,18 @@ class BridgeService(BaseService):
         route_hash = sum(ord(c) for c in f"{source.value}-{target}")
         is_l1 = source == Chain.Ethereum or target == "Ethereum"
         
+        # Select bridge metadata
         selected = next((b for b in BRIDGE_OPTIONS if bridge_name and (b.name.lower() in bridge_name.lower() or bridge_name.lower() in b.name.lower())), None)
         if not selected:
             options = [b for b in BRIDGE_OPTIONS if b.tvl > 300 or b.type == "Canonical"] if is_l1 else [b for b in BRIDGE_OPTIONS if b.type != "Canonical"]
             selected = options[route_hash % len(options)]
 
-        score = {"Canonical": 95, "Intent": 88, "LayerZero": 85, "Liquidity": 78}.get(selected.type, 75)
-        score += min(selected.age_years * 2, 10)
-        if selected.tvl > 1000: score += 4
-        elif selected.tvl < 100: score -= 8
-        if selected.has_exploits: score -= 20
-        
-        score = max(1, min(99, round(score + (route_hash % 5) - 2)))
+        # Use the formal Risk Engine for calculation
+        # This replaces the arbitrary hardcoded math with the weighted multi-factor model
+        risk_breakdown = self.risk_engine.calculate_risk(selected)
+        score = risk_breakdown.overall_score
+
+        # Calculate time estimate (keep existing logic for now as it's separate from risk)
         time = selected.base_time + (route_hash % 3) - 1
         if selected.type == "Canonical" and is_l1: time = 15 + (route_hash % 10)
 
