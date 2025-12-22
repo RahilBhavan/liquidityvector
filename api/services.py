@@ -284,6 +284,7 @@ class AggregatorService:
             breakeven_hours=breakeven.breakeven_hours,
             net_profit_30d=(breakeven.daily_yield_usd * 30) - round_trip.total_round_trip,
             risk_level=risk_level,
+            risk_score=bridge_risk["risk_score"],  # Use the actual calculated risk score (0-100)
             bridge_name=entry_quote.selected_quote.bridge_name,
             estimated_time=bridge_risk["estimated_time"],
             has_exploits=bridge_risk["has_exploits"],

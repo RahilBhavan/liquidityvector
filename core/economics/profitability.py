@@ -10,7 +10,8 @@ from .costs import calculate_cost_ratio
 
 
 # Default configuration matching frontend Heatmap component
-DEFAULT_CAPITAL_MULTIPLIERS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 5.0]
+# Must match CAPITAL_MULTIPLIERS in app/components/Heatmap.tsx
+DEFAULT_CAPITAL_MULTIPLIERS = [0.5, 1.0, 1.5, 2.0, 5.0]
 DEFAULT_TIME_HORIZONS = [7, 14, 30, 90, 180, 365]
 
 
@@ -59,7 +60,9 @@ def generate_profitability_matrix(
         daily_yield = (sim_capital * (target_apy / 100)) / 365
 
         # Create time horizon entries
-        matrix[str(multiplier)] = {}
+        # Normalize multiplier key to match frontend expectations (remove trailing .0)
+        multiplier_key = str(int(multiplier)) if multiplier == int(multiplier) else str(multiplier)
+        matrix[multiplier_key] = {}
 
         for days in time_horizons:
             # Gross profit = yield earned over time
@@ -68,7 +71,7 @@ def generate_profitability_matrix(
             # Net profit = gross - costs
             net_profit = gross_profit - sim_cost
 
-            matrix[str(multiplier)][str(days)] = round(net_profit, 2)
+            matrix[multiplier_key][str(days)] = round(net_profit, 2)
 
     return matrix
 

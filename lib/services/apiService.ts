@@ -44,6 +44,7 @@ interface BackendRouteResponse {
   breakeven_hours: number;
   net_profit_30d: number;
   risk_level: number;
+  risk_score: number;  // 0-100 scale, higher is safer
   bridge_name: string;
   estimated_time: string;
   has_exploits: boolean;
@@ -151,6 +152,7 @@ function transformRouteResponse(data: BackendRouteResponse): RouteCalculation {
     breakevenHours: data.breakeven_hours,
     netProfit30d: data.net_profit_30d,
     riskLevel: data.risk_level,
+    riskScore: data.risk_score,
     bridgeName: data.bridge_name,
     estimatedTime: data.estimated_time,
     hasExploits: data.has_exploits,
@@ -251,9 +253,28 @@ export const apiService = {
     const cached = cache.get<number>(cacheKey);
     if (cached !== null) return cached;
 
-    const response = await fetch(`${API_BASE_URL}/price/${chain.toLowerCase()}`);
+    // Normalize chain name: convert to lowercase and handle special cases
+    let normalizedChain = chain.toLowerCase().trim();
+    // Handle "BNB Chain" -> "bnb chain" (backend expects this format)
+    if (normalizedChain === 'bnb chain') {
+      normalizedChain = 'bnb chain';
+    }
+
+    // Encode the chain name for URL
+    const encodedChain = encodeURIComponent(normalizedChain);
+    const response = await fetch(`${API_BASE_URL}/price/${encodedChain}`);
+    
     if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
+      const errorText = await response.text().catch(() => response.statusText);
+      let errorMessage = `API Error: ${response.statusText}`;
+      try {
+        const errorData = JSON.parse(errorText);
+        errorMessage = errorData.detail || errorMessage;
+      } catch {
+        // If not JSON, use the text or statusText
+        errorMessage = errorText || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();

@@ -97,6 +97,7 @@ class RouteCalculation(BaseModel):
     breakeven_hours: float
     net_profit_30d: float
     risk_level: int  # 1-5 scale
+    risk_score: int = 0  # 0-100 scale, higher is safer (overall_score from risk calculation)
     bridge_name: str
     estimated_time: str
     has_exploits: bool

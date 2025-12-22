@@ -45,23 +45,21 @@ export default function Home() {
   }, [mounted, isConnected, chainId]);
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-bit-white overflow-hidden text-bit-black font-mono">
-      <div className="border-b-2 border-bit-black">
-        <Header
-          walletBalance={walletBalanceUsd}
-          canPopulate={canPopulate}
-          onPopulateCapital={populateFromWallet}
-        />
-      </div>
+    <div className="flex flex-col h-screen w-screen bg-background text-primary font-sans">
+      <Header
+        walletBalance={walletBalanceUsd}
+        canPopulate={canPopulate}
+        onPopulateCapital={populateFromWallet}
+      />
       <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-        <div className="w-full md:w-64 border-r-2 border-bit-black h-full overflow-y-auto">
+        <aside className="w-full md:w-80 h-auto md:h-full flex-shrink-0">
            <Sidebar
              settings={settings}
              setSettings={setSettings}
              isFetching={isFetching}
            />
-        </div>
-        <main className="flex-1 h-full overflow-hidden relative bg-bit-white">
+        </aside>
+        <main className="flex-1 h-full overflow-hidden relative">
           <Dashboard
             settings={settings}
             setFetching={setIsFetching}

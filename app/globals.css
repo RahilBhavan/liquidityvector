@@ -1,247 +1,50 @@
-@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Press+Start+2P&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* Default: Monochrome (Paper) */
-  --bit-bg: #FFFFFF;
-  --bit-fg: #000000;
-  --bit-dim: #E5E5E5;
-  --bit-accent: #000000;
-  --scan-color: rgba(0, 0, 0, 0.1);
-}
-
-[data-theme='amber'] {
-  /* Amber Phosphor */
-  --bit-bg: #1a1200;
-  --bit-fg: #ffb000;
-  --bit-dim: #4a3200;
-  --bit-accent: #ffd040;
-  --scan-color: rgba(255, 176, 0, 0.15);
-}
-
-[data-theme='green'] {
-  /* Green Phosphor */
-  --bit-bg: #001200;
-  --bit-fg: #00ff00;
-  --bit-dim: #003300;
-  --bit-accent: #40ff40;
-  --scan-color: rgba(0, 255, 0, 0.15);
-}
-
-* {
-  border-radius: 0 !important;
+  --background: #F5F5F7;
+  --foreground: #1D1D1F;
 }
 
 body {
-  font-family: 'Courier Prime', 'Courier New', monospace;
-  background-color: var(--bit-bg);
-  color: var(--bit-fg);
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  -webkit-font-smoothing: none;
+  color: var(--foreground);
+  background: var(--background);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.3s ease, color 0.3s ease;
-  overflow: hidden; /* Prevent body scroll, handle in containers */
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 0.8em;
-  line-height: 1.5;
-  text-transform: uppercase;
-}
-
-/* Custom Scrollbar - Themed */
+/* Custom Scrollbar - Sleek & Minimal */
 ::-webkit-scrollbar {
-  width: 16px;
-  height: 16px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bit-bg);
-  border-left: 2px solid var(--bit-fg);
-  background-image: radial-gradient(var(--bit-fg) 1px, transparent 1px);
-  background-size: 4px 4px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--bit-bg);
-  border: 2px solid var(--bit-fg);
-  box-shadow: 2px 2px 0 0 var(--bit-fg);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
 }
 
-::-webkit-scrollbar-thumb:active {
-  background: var(--bit-fg);
-  box-shadow: none;
-  transform: translate(2px, 2px);
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
 }
 
-::-webkit-scrollbar-corner {
-  background: var(--bit-fg);
-}
-
-/* ===========================
-   ANIMATIONS (Meaningful Motion)
-   =========================== */
-
-@keyframes scanline {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100vh); }
-}
-
-@keyframes flicker {
-  0% { opacity: 0.97; }
-  5% { opacity: 0.95; }
-  10% { opacity: 0.97; }
-  15% { opacity: 1; }
-  95% { opacity: 1; }
-  98% { opacity: 0.98; }
-  100% { opacity: 0.97; }
-}
-
-@keyframes slide-in-right {
-  0% { transform: translateX(20px); opacity: 0; }
-  100% { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes pulse-attention {
-  0% { box-shadow: 0 0 0 0 var(--bit-fg); }
-  70% { box-shadow: 0 0 0 4px transparent; }
-  100% { box-shadow: 0 0 0 0 transparent; }
-}
-
-.animate-scanline::before {
-  content: " ";
-  display: block;
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  background: linear-gradient(to bottom, transparent 50%, var(--scan-color) 51%);
-  background-size: 100% 4px;
-  pointer-events: none;
-  z-index: 50;
-}
-
-.animate-scanline::after {
-  content: " ";
-  display: block;
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  background: rgba(18, 16, 16, 0.1);
-  opacity: 0;
-  z-index: 50;
-  pointer-events: none;
-  animation: flicker 0.15s infinite;
-}
-
-.animate-entry {
-  animation: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-pulse-slow {
-  animation: pulse-attention 2s infinite;
-}
-
-/* ===========================
-   1-BIT UTILITY CLASSES
-   =========================== */
-
-@layer components {
-  /* Dithering Patterns - Themed */
-  .pattern-checker {
-    background-image:
-      linear-gradient(45deg, var(--bit-fg) 25%, transparent 25%),
-      linear-gradient(-45deg, var(--bit-fg) 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, var(--bit-fg) 75%),
-      linear-gradient(-45deg, transparent 75%, var(--bit-fg) 75%);
-    background-size: 4px 4px;
-  }
-
-  .pattern-stipple-light {
-    background-image: radial-gradient(var(--bit-fg) 1px, transparent 1px);
-    background-size: 4px 4px;
+@layer utilities {
+  .glass-panel {
+    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-soft-sm;
   }
   
-  .pattern-diagonal {
-    background-image: repeating-linear-gradient(
-      45deg,
-      var(--bit-fg),
-      var(--bit-fg) 1px,
-      transparent 1px,
-      transparent 4px
-    );
-  }
-
-  /* Button base */
-  .btn-1bit {
-    @apply bg-bit-bg text-bit-fg border-2 border-bit-fg shadow-hard px-4 py-2 font-mono text-xs uppercase font-bold tracking-wider cursor-pointer select-none;
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
-  }
-
-  .btn-1bit:hover {
-    @apply bg-bit-dim;
-    transform: translate(2px, 2px);
-    box-shadow: 2px 2px 0 0 var(--bit-fg);
-  }
-
-  .btn-1bit:active {
-    @apply bg-bit-fg text-bit-bg;
-    transform: translate(4px, 4px);
-    box-shadow: none;
-  }
-
-  /* Card base */
-  .card-1bit {
-    @apply bg-bit-bg border-2 border-bit-fg shadow-hard;
+  .card-base {
+    @apply bg-surface rounded-2xl shadow-soft-sm border border-divider transition-all duration-300;
   }
   
-  /* Utilities */
-  .text-bit-fg { color: var(--bit-fg); }
-  .bg-bit-bg { background-color: var(--bit-bg); }
-  .bg-bit-fg { background-color: var(--bit-fg); }
-  .text-bit-bg { color: var(--bit-bg); }
-  .border-bit-fg { border-color: var(--bit-fg); }
-  .shadow-hard { box-shadow: 4px 4px 0 0 var(--bit-fg); }
-  .shadow-hard-sm { box-shadow: 2px 2px 0 0 var(--bit-fg); }
+  .input-base {
+    @apply bg-surface-secondary rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-accent/20 transition-all text-primary placeholder:text-secondary;
+  }
 }
 
-/* Loading animation - barber pole stripes */
-@keyframes barber-pole {
-  0% { background-position: 0 0; }
-  100% { background-position: 28px 28px; }
-}
-
-.loading-1bit {
-  background-image: repeating-linear-gradient(
-    45deg,
-    var(--bit-fg),
-    var(--bit-fg) 10px,
-    var(--bit-bg) 10px,
-    var(--bit-bg) 20px
-  );
-  animation: barber-pole 1s linear infinite;
-  border: 2px solid var(--bit-fg);
-}
-
-/* Blinking cursor */
-@keyframes blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
-}
-
-.cursor-blink {
-  animation: blink 1s step-end infinite;
-  display: inline-block;
-  width: 10px;
-  height: 1.2em;
-  background-color: var(--bit-fg);
-  vertical-align: text-bottom;
-}

@@ -70,6 +70,7 @@ export interface RouteCalculation {
   breakevenHours: number;
   netProfit30d: number;
   riskLevel: number;
+  riskScore: number;  // 0-100 scale, higher is safer (from backend risk calculation)
   bridgeName: string;
   estimatedTime: string;
   hasExploits: boolean;

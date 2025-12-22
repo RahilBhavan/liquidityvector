@@ -14,7 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-bit-white text-bit-black scanlines antialiased overflow-hidden h-screen w-screen">
+      <body className="text-primary bg-background font-sans antialiased overflow-hidden h-screen w-screen selection:bg-accent/20">
         <WalletProvider>
           {children}
         </WalletProvider>

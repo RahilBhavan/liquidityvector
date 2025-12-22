@@ -291,11 +291,14 @@ async def get_native_token_price(request: Request, chain: str):
     Rate limited to 60 requests per minute per IP.
     """
     from .models import Chain
+    from urllib.parse import unquote
 
     service = get_service()
     try:
+        # Decode URL-encoded chain name (handles spaces like "bnb chain")
+        decoded_chain = unquote(chain)
         # Map chain string to Chain enum (handle various aliases)
-        chain_lower = chain.lower().strip()
+        chain_lower = decoded_chain.lower().strip()
         chain_map = {
             "ethereum": Chain.Ethereum,
             "eth": Chain.Ethereum,
@@ -316,13 +319,17 @@ async def get_native_token_price(request: Request, chain: str):
         }
         chain_enum = chain_map.get(chain_lower)
         if not chain_enum:
-            raise HTTPException(status_code=400, detail=f"Unsupported chain: {chain}")
+            logger.warning(f"Unsupported chain requested: {chain} (decoded: {decoded_chain}, lower: {chain_lower})")
+            raise HTTPException(status_code=400, detail=f"Unsupported chain: {chain}. Supported chains: ethereum, arbitrum, base, optimism, polygon, avalanche, bnb chain")
 
         price = await service.get_native_token_price(chain_enum)
         logger.info(f"Price endpoint: {chain} -> ${price:.2f}")
         return {"chain": chain, "price_usd": price}
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 400 for unsupported chain)
+        raise
     except Exception as e:
-        logger.error(f"Failed to get price for {chain}: {e}")
+        logger.error(f"Failed to get price for {chain}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to get price: {str(e)}")
 
 
