@@ -89,12 +89,9 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             if not v or v.strip() == "":
                 return []
-            # Handle comma-separated strings, filter empty values
-            return [
-                origin.strip()
-                for origin in v.split(",")
-                if origin.strip()
-            ]
+            if v == "*":
+                return ["*"]
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
         return v if v else []
 
     @field_validator("ENVIRONMENT", mode="before")

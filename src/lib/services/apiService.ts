@@ -2,6 +2,13 @@ import { Chain, Pool, RouteCalculation, ChartDataPoint, BridgeMetadata, CostBrea
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
+if (typeof window !== 'undefined') {
+  console.log('[LiquidityVector] API Configured:', API_BASE_URL);
+  if (API_BASE_URL.includes('localhost') && window.location.hostname !== 'localhost') {
+    console.warn('⚠️ Using localhost API in production! Set NEXT_PUBLIC_API_BASE_URL env var.');
+  }
+}
+
 // Cache configuration
 const CACHE_TTL_MS = 30_000; // 30 seconds
 const MAX_CACHE_ENTRIES = 100;
@@ -263,7 +270,7 @@ export const apiService = {
     // Encode the chain name for URL
     const encodedChain = encodeURIComponent(normalizedChain);
     const response = await fetch(`${API_BASE_URL}/price/${encodedChain}`);
-    
+
     if (!response.ok) {
       const errorText = await response.text().catch(() => response.statusText);
       let errorMessage = `API Error: ${response.statusText}`;
