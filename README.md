@@ -17,6 +17,28 @@ In the fragmented DeFi landscape, yield arbitrage is often a "friction trap." Hi
 
 **Liquidity Vector** provides institutional-grade clarity, answering the binary question: *"Will this rotation result in a net profit within my specific time horizon?"*
 
+```mermaid
+sequenceDiagram
+    participant User
+    participant Dashboard
+    participant Engine
+    
+    User->>Dashboard: Connect Wallet & Select Chain
+    Dashboard->>Engine: Request Analysis (Capital, Risk Profile)
+    
+    par Data Aggregation
+        Engine->>Engine: Fetch Yields (DeFiLlama)
+        Engine->>Engine: Quote Bridges (Li.Fi)
+        Engine->>Engine: Estimate Gas (RPCs)
+    end
+    
+    Engine->>Engine: Calculate Breakeven (NPV)
+    Engine->>Engine: Score Risk (V-Score)
+    
+    Engine-->>Dashboard: Return Optimized Route
+    Dashboard-->>User: Display Breakeven Horizon & Profit Matrix
+```
+
 ---
 
 ## ✨ Core Innovations
@@ -46,19 +68,48 @@ A radical departure from high-noise DeFi dashboards.
 
 ## 🏗️ Technical Architecture
 
+### **System Design**
+```mermaid
+graph TD
+    Client[React Frontend] -->|REST API| API[FastAPI Backend]
+    
+    subgraph "Backend Services"
+        API --> Aggregator[Aggregator Service]
+        Aggregator --> Yield[Yield Service]
+        Aggregator --> Gas[Gas Service]
+        Aggregator --> Bridge[Bridge Service]
+        Aggregator --> Risk[Risk Engine]
+    end
+    
+    subgraph "Core Logic"
+        Risk --> Scoring[Deterministic Scoring]
+        Aggregator --> Economics[Economics Engine]
+        Economics --> Breakeven[Breakeven Calc]
+        Economics --> Profit[Profit Matrix]
+    end
+    
+    subgraph "External Data"
+        Yield -->|HTTP| DeFiLlama
+        Bridge -->|HTTP| LiFi[Li.Fi API]
+        Gas -->|JSON-RPC| RPCs[Chain RPCs]
+        Risk -->|HTTP| Etherscan
+        Risk -->|Local DB| REKT[REKT Database]
+    end
+```
+
 ### **The Engine (Backend: Python/FastAPI)**
 - **Async Aggregator**: Concurrently queries multiple RPC nodes and bridge APIs (Li.Fi) using `asyncio` for sub-second analysis.
-- **Vectorized Models**: Implements matrix-based profitability projections to simulate 30+ scenarios (Time x Capital) per request.
-- **Resilience Layer**: Robust circuit breakers (`pybreaker`) and TTL caching to mitigate blockchain infrastructure instability.
+- **Economic Model**: Implements vectorized profitability matrices to simulate 30+ scenarios (Time x Capital) instantly.
+- **Resilience Layer**: Robust circuit breakers and TTL caching to handle blockchain RPC instability.
 
 ### **The Interface (Frontend: Next.js/React)**
-- **Modern Stack**: Next.js 15 (App Router), TypeScript, and Tailwind CSS.
-- **Web3 Integration**: Seamless wallet connectivity via **RainbowKit** and **Wagmi v2**.
-- **Responsive Geometry**: Fluid layout that transitions from a data-heavy desktop terminal to a clean mobile summary.
+- **Real-time Visualization**: High-performance Area Charts (Recharts) showing profit accumulation zones.
+- **Web3 Ready**: Integrated with **RainbowKit** and **Wagmi** for seamless wallet connectivity and chain synchronization.
+- **Vibe Coding Workflow**: Built using high-level architectural direction and rapid AI-assisted iteration cycles.
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### **Prerequisites**
 - Docker & Docker Compose
