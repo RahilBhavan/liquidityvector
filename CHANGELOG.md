@@ -6,6 +6,7 @@
 - Fixed Docker build failure by migrating from `npm ci` to `npm install` in `Dockerfile.frontend` to handle lockfile inconsistencies.
 - Optimized frontend build stage with `build-base` and common native build dependencies for Alpine Linux.
 - Implemented root-level `.dockerignore` to prevent host `node_modules` from polluting Docker build context.
+- Added `react-is` dependency to resolve `Module not found` error during Turbopack production build.
 - Enhanced environment variable handling for production deployment readiness.
 
 ## [1.2.0] - 2025-12-20
