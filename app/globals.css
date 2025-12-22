@@ -1,46 +1,173 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Press+Start+2P&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --lv-indigo: #371E7B;
-  --lv-lime: #CCFF00;
-  --lv-offwhite: #F9F9F5;
+  --bit-black: #000000;
+  --bit-white: #FFFFFF;
+}
+
+* {
+  border-radius: 0 !important;
 }
 
 body {
-  font-family: 'Inter', sans-serif;
-  background-color: var(--lv-offwhite);
-  color: var(--lv-indigo);
+  font-family: 'Courier Prime', 'Courier New', monospace;
+  background-color: var(--bit-white);
+  color: var(--bit-black);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.8em; /* Adjusted for Press Start 2P scaling */
+  line-height: 1.5;
+  text-transform: uppercase;
 }
 
-/* Custom scrollbar */
+/* 1-Bit Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 16px;
+  height: 16px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--lv-offwhite);
-  border-left: 1px solid var(--lv-indigo);
+  background: var(--bit-white);
+  border-left: 2px solid var(--bit-black);
+  background-image: radial-gradient(var(--bit-black) 1px, transparent 1px);
+  background-size: 4px 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--lv-indigo);
-  border: 1px solid var(--lv-offwhite);
+  background: var(--bit-white);
+  border: 2px solid var(--bit-black);
+  box-shadow: 2px 2px 0 0 var(--bit-black);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #4C2A9E;
+::-webkit-scrollbar-thumb:active {
+  background: var(--bit-black);
+  box-shadow: none;
+  transform: translate(2px, 2px);
 }
 
-/* RainbowKit overrides for sharp corners */
-[data-rk] * {
-  border-radius: 0 !important;
+::-webkit-scrollbar-corner {
+  background: var(--bit-black);
+}
+
+/* ===========================
+   1-BIT DITHERING PATTERNS
+   =========================== */
+
+/* Checkered pattern (50% density) */
+.pattern-checker {
+  background-image:
+    linear-gradient(45deg, var(--bit-black) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--bit-black) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--bit-black) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--bit-black) 75%);
+  background-size: 4px 4px;
+  background-position: 0 0, 0 2px, 2px -2px, -2px 0px;
+}
+
+/* Light stipple (25% density) */
+.pattern-stipple-light {
+  background-image: radial-gradient(var(--bit-black) 1px, transparent 1px);
+  background-size: 4px 4px;
+}
+
+/* Medium stipple (50% density) */
+.pattern-stipple-medium {
+  background-image: radial-gradient(var(--bit-black) 1px, transparent 1px);
+  background-size: 2px 2px;
+}
+
+/* Dense stipple (75% density) */
+.pattern-stipple-dense {
+  background-color: var(--bit-black);
+  background-image: radial-gradient(var(--bit-white) 1px, transparent 1px);
+  background-size: 4px 4px;
+}
+
+/* Scanline overlay */
+.scanlines::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 1px,
+    rgba(0, 0, 0, 0.1) 1px, /* Increased visibility for 1-bit feel */
+    rgba(0, 0, 0, 0.1) 3px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ===========================
+   1-BIT UTILITY CLASSES
+   =========================== */
+
+/* Button base - inverts on hover */
+.btn-1bit {
+  @apply bg-bit-white text-bit-black border-2 border-bit-black shadow-hard px-4 py-2 font-mono text-xs uppercase font-bold tracking-wider;
+  transition: none; /* Instant transition for retro feel */
+}
+
+.btn-1bit:hover {
+  @apply bg-bit-dim shadow-hard-sm;
+  background-image: radial-gradient(#000 1px, transparent 1px);
+  background-size: 4px 4px;
+  transform: translate(2px, 2px);
+}
+
+.btn-1bit:active {
+  @apply bg-bit-black text-bit-white shadow-none;
+  transform: translate(4px, 4px);
+}
+
+/* Card base */
+.card-1bit {
+  @apply bg-bit-white border-2 border-bit-black shadow-hard;
+}
+
+/* Loading animation - barber pole stripes */
+@keyframes barber-pole {
+  0% { background-position: 0 0; }
+  100% { background-position: 28px 28px; } /* Adjusted for new size */
+}
+
+.loading-1bit {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--bit-black),
+    var(--bit-black) 10px,
+    var(--bit-white) 10px,
+    var(--bit-white) 20px
+  );
+  animation: barber-pole 1s linear infinite;
+  border: 2px solid var(--bit-black);
+}
+
+/* Blinking cursor */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.cursor-blink {
+  animation: blink 1s step-end infinite;
+  display: inline-block;
+  width: 10px;
+  height: 1.2em;
+  background-color: var(--bit-black);
+  vertical-align: text-bottom;
 }

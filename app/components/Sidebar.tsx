@@ -3,7 +3,6 @@
 import { Chain, UserSettings } from '@/types';
 import { Wallet, ShieldAlert, Coins, Link as LinkIcon } from 'lucide-react';
 import { useAccount } from 'wagmi';
-import { motion } from 'framer-motion';
 
 interface SidebarProps {
   settings: UserSettings;
@@ -18,152 +17,97 @@ export default function Sidebar({ settings, setSettings, isFetching }: SidebarPr
     setSettings(prev => ({ ...prev, [field]: value }));
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, x: -20 },
-    show: { opacity: 1, x: 0 }
-  };
-
   return (
-    <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="show"
-      className="w-full md:w-80 bg-[#F9F9F5] p-6 flex flex-col h-full overflow-y-auto"
-    >
-      {/* Logo */}
-      <motion.div 
-        variants={itemVariants}
-        className="flex items-center gap-3 mb-12 border-b-2 border-[#371E7B] pb-6"
-      >
-        <div className="w-10 h-10 bg-[#371E7B] flex items-center justify-center shadow-[4px_4px_0px_0px_#CCFF00]">
-          <Coins className="text-[#CCFF00] w-6 h-6" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-[#371E7B] uppercase tracking-wide leading-none font-['Space_Grotesk']">
-            Liquidity
-          </h1>
-          <h1 className="text-xl font-bold text-[#371E7B] uppercase tracking-wide leading-none font-['Space_Grotesk']">
-            Vector
-          </h1>
-        </div>
-      </motion.div>
-
-      <div className="space-y-10">
-        {/* Capital Input */}
-        <motion.div 
-          variants={itemVariants}
-          className="space-y-3"
-        >
-          <label className="text-sm uppercase tracking-widest text-[#371E7B] font-bold flex items-center gap-2 font-['Space_Grotesk']">
-            <Wallet className="w-4 h-4" /> Capital (USDC)
+    <div className="w-full h-full bg-bit-white p-4 flex flex-col overflow-y-auto font-mono text-sm">
+      
+      {/* Section: CAPITAL */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-2">
+            <label className="font-bold uppercase flex items-center gap-2">
+                <span className="bg-bit-black text-bit-white px-1">{'>'}</span> CAPITAL
+            </label>
             {isConnected && (
-              <span className="text-[10px] bg-[#CCFF00] px-1.5 py-0.5 border border-[#371E7B] ml-auto">
-                <LinkIcon className="w-3 h-3 inline mr-1" />
-                Synced
-              </span>
+              <span className="text-[10px] border border-bit-black px-1 uppercase">Synced</span>
             )}
-          </label>
-          <div className="relative group">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#371E7B] font-bold font-mono">
-              $
-            </span>
-            <input
-              type="number"
-              value={settings.capital}
-              onChange={(e) => handleChange('capital', Number(e.target.value))}
-              className="w-full bg-white border-2 border-[#371E7B] py-3 pl-8 pr-4 text-[#371E7B] font-mono font-bold focus:bg-[#CCFF00]/10 focus:outline-none transition-all placeholder-[#371E7B]/30 rounded-none shadow-[4px_4px_0px_0px_#371E7B]"
-            />
-          </div>
-        </motion.div>
+        </div>
+        <div className="relative">
+          <input
+            type="number"
+            value={settings.capital}
+            onChange={(e) => handleChange('capital', Number(e.target.value))}
+            className="w-full bg-bit-white border-2 border-bit-black p-2 pl-6 font-bold focus:outline-none focus:bg-bit-black focus:text-bit-white shadow-hard"
+          />
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none font-bold">$</span>
+        </div>
+      </div>
 
-        {/* Current Chain - 7 chains */}
-        <motion.div 
-          variants={itemVariants}
-          className="space-y-3"
-        >
-          <label className="text-sm uppercase tracking-widest text-[#371E7B] font-bold font-['Space_Grotesk']">
-            Current Chain
-          </label>
-          <div className="flex flex-col gap-0 border-2 border-[#371E7B] max-h-48 overflow-y-auto">
-            {Object.values(Chain).map((chain) => (
-              <motion.button
-                key={chain}
-                whileHover={{ backgroundColor: settings.currentChain === chain ? '#CCFF00' : '#F0F0E0' }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => handleChange('currentChain', chain)}
-                className={`px-4 py-3 text-sm font-bold transition-all text-left flex items-center justify-between border-b border-[#371E7B] last:border-b-0
-                  ${settings.currentChain === chain
-                    ? 'bg-[#CCFF00] text-[#371E7B]'
-                    : 'bg-white text-[#371E7B]'}`}
-              >
-                {chain}
-                {settings.currentChain === chain && (
-                  <motion.div 
-                    layoutId="activeChain"
-                    className="w-2 h-2 bg-[#371E7B]" 
-                  />
-                )}
-              </motion.button>
-            ))}
-          </div>
-        </motion.div>
+      {/* Section: CHAINS */}
+      <div className="mb-8">
+        <label className="font-bold uppercase mb-2 block">
+            <span className="bg-bit-black text-bit-white px-1 mr-2">{'>'}</span> CHAINS
+        </label>
+        <div className="border-2 border-bit-black p-1 bg-bit-white shadow-hard">
+            <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                {Object.values(Chain).map((chain) => (
+                <button
+                    key={chain}
+                    onClick={() => handleChange('currentChain', chain)}
+                    className={`w-full text-left px-2 py-1 mb-1 font-bold uppercase flex items-center gap-2 hover:bg-bit-black hover:text-bit-white ${
+                        settings.currentChain === chain ? 'bg-bit-black text-bit-white' : ''
+                    }`}
+                >
+                    <span>{settings.currentChain === chain ? '[x]' : '[ ]'}</span>
+                    {chain}
+                </button>
+                ))}
+            </div>
+        </div>
+      </div>
 
-        {/* Risk Tolerance */}
-        <motion.div 
-          variants={itemVariants}
-          className="space-y-3 border-2 border-dashed border-[#371E7B] p-4"
-        >
-          <label className="text-sm uppercase tracking-widest text-[#371E7B] font-bold flex items-center gap-2 font-['Space_Grotesk'] mb-2">
-            <ShieldAlert className="w-4 h-4" /> Risk Tolerance
-          </label>
-
-          <div className="flex items-end gap-1 h-16 w-full mb-1">
+      {/* Section: RISK */}
+      <div className="mb-8">
+        <label className="font-bold uppercase mb-2 block">
+            <span className="bg-bit-black text-bit-white px-1 mr-2">{'>'}</span> RISK_TOLERANCE
+        </label>
+        <div className="border-2 border-bit-black p-4 shadow-hard pattern-stipple-light">
+          <div className="flex items-end justify-between gap-1 h-16 mb-2">
             {[1, 2, 3, 4, 5].map((level) => {
               const isActive = settings.riskTolerance >= level;
               return (
-                <motion.button
+                <button
                   key={level}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                   onClick={() => handleChange('riskTolerance', level)}
-                  className={`flex-1 border-2 border-[#371E7B] transition-all duration-200 relative group outline-none focus:ring-2 focus:ring-[#CCFF00]
-                    ${isActive ? 'bg-[#371E7B]' : 'bg-transparent'}
-                  `}
+                  className={`flex-1 border-2 border-bit-black transition-none ${
+                    isActive ? 'bg-bit-black pattern-checker' : 'bg-bit-white'
+                  }`}
                   style={{ height: `${20 + (level * 16)}%` }}
-                  aria-label={`Set risk tolerance to ${level}`}
                 />
               );
             })}
           </div>
-
-          <div className="flex justify-between text-[10px] text-[#371E7B] font-mono uppercase tracking-tight font-bold">
-            <span>Conservative</span>
-            <span>Degen</span>
+          <div className="flex justify-between text-[10px] font-bold uppercase">
+             <span>SAFE</span>
+             <span>DEGEN</span>
           </div>
-        </motion.div>
+        </div>
       </div>
 
-      <motion.div 
-        variants={itemVariants}
-        className="mt-auto pt-8 border-t-2 border-[#371E7B]"
-      >
-        <p className="text-xs text-[#371E7B] leading-relaxed font-mono opacity-80">
-          SYSTEM STATUS: {isFetching ? 'SCANNING...' : 'ONLINE'}<br />
-          NODE: 2050-ALPHA<br />
-          {isConnected ? 'WALLET: CONNECTED' : 'WALLET: DISCONNECTED'}
-        </p>
-      </motion.div>
-    </motion.div>
+      {/* Footer Status */}
+      <div className="mt-auto border-t-2 border-bit-black pt-4">
+        <div className="bg-bit-black text-bit-white p-2 text-xs font-bold mb-2 shadow-hard-sm">
+            [SYS_STATUS: {isFetching ? 'SCANNING...' : 'OK'}]
+        </div>
+        <div className="text-xs space-y-1">
+            <div className="flex justify-between">
+                <span>NODE:</span>
+                <span>2050-ALPHA</span>
+            </div>
+            <div className="flex justify-between">
+                <span>UPTIME:</span>
+                <span>99.9%</span>
+            </div>
+        </div>
+      </div>
+    </div>
   );
 }

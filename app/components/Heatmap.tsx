@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, memo } from 'react';
 import { RouteCalculation } from '@/types';
 
 interface HeatmapProps {
@@ -7,64 +8,92 @@ interface HeatmapProps {
   capital: number;
 }
 
-export default function Heatmap({ route, capital }: HeatmapProps) {
-  const capitalSteps = [0.5, 0.75, 1, 1.25, 1.5, 2, 5];
-  const timeHorizons = [7, 14, 30, 90, 180, 365];
+// Configuration matching backend profitability matrix
+const CAPITAL_MULTIPLIERS = [0.5, 0.75, 1, 1.25, 1.5, 2, 5];
+const TIME_HORIZONS = [7, 14, 30, 90, 180, 365];
 
-  const getProfitability = (capMultiplier: number, days: number) => {
-    const simCapital = capital * capMultiplier;
-    const netYield = route.targetPool.apy;
-    const grossProfit = (simCapital * (netYield / 100)) * (days / 365);
-    // Use actual route costs, scaled proportionally to simulated capital
+// Intensity scaling factor for color calculation
+const INTENSITY_SCALE = 200;
+
+function Heatmap({ route, capital }: HeatmapProps) {
+  const hasBackendMatrix = route.profitabilityMatrix &&
+    Object.keys(route.profitabilityMatrix).length > 0;
+
+  const getProfitability = useMemo(() => {
+    if (hasBackendMatrix) {
+      return (multiplier: number, days: number): number => {
+        const multiplierKey = String(multiplier);
+        const daysKey = String(days);
+        return route.profitabilityMatrix[multiplierKey]?.[daysKey] ?? 0;
+      };
+    }
+
     const costRatio = route.totalCost / capital;
-    const simTotalCost = simCapital * costRatio;
-    return grossProfit - simTotalCost;
+    return (multiplier: number, days: number): number => {
+      const simCapital = capital * multiplier;
+      const grossProfit = (simCapital * (route.targetPool.apy / 100)) * (days / 365);
+      const simTotalCost = simCapital * costRatio;
+      return grossProfit - simTotalCost;
+    };
+  }, [hasBackendMatrix, route.profitabilityMatrix, route.totalCost, route.targetPool.apy, capital]);
+
+  const getCellClass = (profit: number): string => {
+    if (profit <= 0) return 'bg-bit-white text-bit-black'; // Loss
+    const intensity = Math.min(Math.abs(profit) / INTENSITY_SCALE, 1);
+    
+    if (intensity < 0.3) return 'pattern-stipple-light text-bit-black font-bold';
+    if (intensity < 0.7) return 'pattern-checker text-bit-black font-bold';
+    return 'bg-bit-black text-bit-white font-bold';
+  };
+
+  const formatProfit = (profit: number): string => {
+    const prefix = profit > 0 ? '+' : '';
+    if (Math.abs(profit) > 999) {
+      return `${prefix}${(profit / 1000).toFixed(1)}k`;
+    }
+    return `${prefix}${profit.toFixed(0)}`;
   };
 
   return (
-    <div className="bg-white border-2 border-[#371E7B] p-6 h-full flex flex-col">
-      <h3 className="text-xl font-bold text-[#371E7B] mb-6 font-['Space_Grotesk'] uppercase flex items-center gap-2">
-        <span className="w-3 h-3 bg-[#CCFF00] border border-[#371E7B]"></span>
+    <div className="bg-bit-white border-2 border-bit-black p-4 h-full flex flex-col shadow-hard">
+      <h3 className="text-lg font-bold font-pixel uppercase mb-6 flex items-center gap-2">
+        <span className="w-3 h-3 bg-bit-black"></span>
         Profitability Matrix
       </h3>
       <div className="overflow-x-auto flex-1 flex flex-col justify-center">
         <div className="min-w-[400px]">
+          {/* Header row */}
           <div className="flex mb-2">
-            <div className="w-24 text-xs text-[#371E7B] font-mono font-bold flex items-end uppercase">Time \ Cap</div>
-            {capitalSteps.map(step => (
-              <div key={step} className="flex-1 text-center text-xs text-[#371E7B] font-mono font-bold pb-2 border-b-2 border-[#371E7B] mx-0.5">
+            <div className="w-24 text-xs font-mono font-bold flex items-end uppercase">
+              Time \ Cap
+            </div>
+            {CAPITAL_MULTIPLIERS.map(step => (
+              <div
+                key={step}
+                className="flex-1 text-center text-xs font-mono font-bold pb-2 border-b-2 border-bit-black mx-0.5"
+              >
                 ${(capital * step / 1000).toFixed(1)}k
               </div>
             ))}
           </div>
 
-          {timeHorizons.map(days => (
+          {/* Data rows */}
+          {TIME_HORIZONS.map(days => (
             <div key={days} className="flex mb-1 h-10">
-              <div className="w-24 text-xs text-[#371E7B] font-mono font-bold flex items-center pr-4 border-r-2 border-[#371E7B]">
+              <div className="w-24 text-xs font-mono font-bold flex items-center pr-4 border-r-2 border-bit-black">
                 {days} DAYS
               </div>
-              {capitalSteps.map(step => {
+              {CAPITAL_MULTIPLIERS.map(step => {
                 const profit = getProfitability(step, days);
-                const isProfitable = profit > 0;
-                const intensity = Math.min(Math.abs(profit) / 200, 1);
-
-                let bgStyle = {};
-                if (isProfitable) {
-                  bgStyle = { backgroundColor: `rgba(204, 255, 0, ${0.2 + intensity * 0.8})`, color: '#371E7B' };
-                } else {
-                  bgStyle = { backgroundColor: `rgba(55, 30, 123, ${0.05 + intensity * 0.1})`, color: '#371E7B' };
-                }
-
                 return (
                   <div
                     key={step}
-                    className="flex-1 mx-0.5 border border-[#371E7B]/10 flex items-center justify-center text-[10px] font-bold font-mono relative group cursor-default transition-all hover:scale-105 hover:z-10 hover:border-[#371E7B] hover:shadow-md"
-                    style={bgStyle}
+                    className={`flex-1 mx-0.5 border border-bit-black flex items-center justify-center text-[10px] font-mono relative group cursor-default transition-none hover:invert-1bit ${getCellClass(profit)}`}
                   >
-                    <span className="opacity-0 group-hover:opacity-100 absolute -top-10 left-1/2 -translate-x-1/2 bg-[#371E7B] text-white px-3 py-1 text-xs whitespace-nowrap z-20 border-2 border-white shadow-lg pointer-events-none font-sans">
+                    <span className="opacity-0 group-hover:opacity-100 absolute -top-10 left-1/2 -translate-x-1/2 bg-bit-black text-bit-white px-2 py-1 text-xs whitespace-nowrap z-20 border-2 border-bit-white shadow-hard pointer-events-none">
                       ${profit.toFixed(0)}
                     </span>
-                    {isProfitable ? '+' : ''}{profit > 999 ? (profit / 1000).toFixed(1) + 'k' : profit.toFixed(0)}
+                    {formatProfit(profit)}
                   </div>
                 );
               })}
@@ -75,3 +104,5 @@ export default function Heatmap({ route, capital }: HeatmapProps) {
     </div>
   );
 }
+
+export default memo(Heatmap);

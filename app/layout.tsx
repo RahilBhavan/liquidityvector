@@ -1,9 +1,6 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import { WalletProvider } from '@/providers/WalletProvider';
 import './globals.css';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'LiquidityVector',
@@ -17,7 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased`}>
+      <body className="bg-bit-white text-bit-black scanlines antialiased overflow-hidden h-screen w-screen">
         <WalletProvider>
           {children}
         </WalletProvider>

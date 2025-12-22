@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 import {
   LineChart,
   Line,
@@ -12,11 +12,14 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { TrendingUp, AlertTriangle } from 'lucide-react';
+import { ChartDataPoint } from '@/types';
 
 interface BreakevenChartProps {
   migrationCost: number;
   dailyYieldDelta: number;
   timeframeDays?: number;
+  breakevenChartData?: ChartDataPoint[];
+  breakevenDays?: number;
 }
 
 interface DataPoint {
@@ -30,7 +33,11 @@ interface CustomTooltipProps {
   label?: number;
 }
 
-const CustomTooltip = ({
+// Maximum data points for performance
+const MAX_DATA_POINTS = 100;
+const DEFAULT_TIMEFRAME = 30;
+
+const CustomTooltip = memo(({
   active,
   payload,
   label,
@@ -39,27 +46,44 @@ const CustomTooltip = ({
     const profit = payload[0].value as number;
     const isPositive = profit >= 0;
     return (
-      <div className="bg-[#371E7B] text-white px-4 py-2 border-2 border-white shadow-lg">
-        <p className="font-mono text-sm font-bold">Day {label}</p>
-        <p className={`font-mono text-lg font-bold ${isPositive ? 'text-[#CCFF00]' : 'text-red-400'}`}>
+      <div className="bg-bit-white text-bit-black px-4 py-2 border-2 border-bit-black shadow-hard">
+        <p className="font-mono text-sm font-bold uppercase">Day {label}</p>
+        <p className="font-mono text-lg font-bold">
           {isPositive ? '+' : ''}${profit.toFixed(2)}
         </p>
-        <p className="text-[10px] uppercase tracking-wider opacity-70">
-          {isPositive ? 'Profit' : 'Loss'}
+        <p className="text-[10px] uppercase tracking-wider">
+          {isPositive ? 'PROFIT' : 'LOSS'}
         </p>
       </div>
     );
   }
   return null;
-};
+});
 
-export default function BreakevenChart({
+CustomTooltip.displayName = 'CustomTooltip';
+
+function BreakevenChart({
   migrationCost,
   dailyYieldDelta,
   timeframeDays,
+  breakevenChartData,
+  breakevenDays: providedBreakevenDays,
 }: BreakevenChartProps) {
   const { data, breakevenDay, calculatedTimeframe, hasBreakeven } = useMemo(() => {
-    // Calculate breakeven day (only if positive yield delta)
+    // Use backend-provided data if available
+    if (breakevenChartData && breakevenChartData.length > 0) {
+      const lastPoint = breakevenChartData[breakevenChartData.length - 1];
+      const calculatedTimeframe = lastPoint?.day ?? DEFAULT_TIMEFRAME;
+
+      return {
+        data: breakevenChartData,
+        breakevenDay: providedBreakevenDays ?? null,
+        calculatedTimeframe,
+        hasBreakeven: providedBreakevenDays !== undefined && providedBreakevenDays !== Infinity
+      };
+    }
+
+    // Fallback: calculate locally
     let breakevenDay: number | null = null;
     let hasBreakeven = false;
 
@@ -67,23 +91,20 @@ export default function BreakevenChart({
       breakevenDay = migrationCost / dailyYieldDelta;
       hasBreakeven = true;
     } else if (migrationCost <= 0) {
-      // Immediate profitability
       breakevenDay = 0;
       hasBreakeven = true;
     }
 
-    // Calculate timeframe
     const calculatedTimeframe = timeframeDays ?? (
       hasBreakeven && breakevenDay !== null
-        ? Math.max(30, Math.ceil(breakevenDay * 1.5))
-        : 30
+        ? Math.max(DEFAULT_TIMEFRAME, Math.ceil(breakevenDay * 1.5))
+        : DEFAULT_TIMEFRAME
     );
 
-    // Generate data points
-    const data: DataPoint[] = [];
-    const numPoints = Math.min(calculatedTimeframe + 1, 100); // Cap at 100 points
+    const numPoints = Math.min(calculatedTimeframe + 1, MAX_DATA_POINTS);
     const step = calculatedTimeframe / (numPoints - 1);
 
+    const data: DataPoint[] = [];
     for (let i = 0; i < numPoints; i++) {
       const day = Math.round(i * step);
       const profit = (day * dailyYieldDelta) - migrationCost;
@@ -91,7 +112,7 @@ export default function BreakevenChart({
     }
 
     return { data, breakevenDay, calculatedTimeframe, hasBreakeven };
-  }, [migrationCost, dailyYieldDelta, timeframeDays]);
+  }, [migrationCost, dailyYieldDelta, timeframeDays, breakevenChartData, providedBreakevenDays]);
 
   // Calculate Y-axis domain
   const yMin = Math.min(...data.map(d => d.profit));
@@ -110,24 +131,24 @@ export default function BreakevenChart({
   const neverBreaksEven = dailyYieldDelta <= 0 && migrationCost > 0;
 
   return (
-    <div className="bg-white border-2 border-[#371E7B] p-6 h-80 flex flex-col shadow-[4px_4px_0px_0px_#371E7B]">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-bold text-[#371E7B] font-['Space_Grotesk'] uppercase flex items-center gap-2">
-          <span className="w-3 h-3 bg-[#CCFF00] border border-[#371E7B]"></span>
+    <div className="bg-bit-white border-2 border-bit-black p-4 h-80 flex flex-col shadow-hard">
+      <div className="flex items-center justify-between mb-4 border-b-2 border-bit-black pb-2">
+        <h3 className="text-lg font-bold font-pixel uppercase flex items-center gap-2">
+          <span className="w-3 h-3 bg-bit-black"></span>
           Breakeven Timeline
         </h3>
         {hasBreakeven && breakevenDay !== null && breakevenDay > 0 && (
-          <div className="flex items-center gap-2 bg-[#F9F9F5] border border-[#371E7B] px-3 py-1">
-            <TrendingUp className="w-4 h-4 text-[#371E7B]" />
-            <span className="font-mono text-sm font-bold text-[#371E7B]">
+          <div className="flex items-center gap-2 bg-bit-white border-2 border-bit-black px-2 py-1 shadow-sm">
+            <TrendingUp className="w-4 h-4" />
+            <span className="font-mono text-xs font-bold uppercase">
               Day {Math.ceil(breakevenDay)}
             </span>
           </div>
         )}
         {neverBreaksEven && (
-          <div className="flex items-center gap-2 bg-red-50 border border-red-600 px-3 py-1">
-            <AlertTriangle className="w-4 h-4 text-red-600" />
-            <span className="font-mono text-xs font-bold text-red-600 uppercase">
+          <div className="flex items-center gap-2 bg-bit-black text-bit-white px-2 py-1">
+            <AlertTriangle className="w-4 h-4" />
+            <span className="font-mono text-xs font-bold uppercase">
               No Breakeven
             </span>
           </div>
@@ -141,80 +162,47 @@ export default function BreakevenChart({
             margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
           >
             <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="#e5e7eb"
+              strokeDasharray="2 2"
+              stroke="#000000"
+              strokeOpacity={0.2}
               vertical={false}
             />
             <XAxis
               dataKey="day"
-              stroke="#371E7B"
-              fontSize={11}
-              fontFamily="ui-monospace"
-              tickLine={false}
-              axisLine={{ stroke: '#371E7B', strokeWidth: 2 }}
-              label={{
-                value: 'Days',
-                position: 'insideBottomRight',
-                offset: -5,
-                style: {
-                  fontSize: 10,
-                  fontWeight: 'bold',
-                  textTransform: 'uppercase',
-                  fill: '#371E7B',
-                },
-              }}
+              stroke="#000000"
+              fontSize={10}
+              fontFamily="monospace"
+              tickLine={true}
+              axisLine={{ stroke: '#000000', strokeWidth: 2 }}
             />
             <YAxis
-              stroke="#371E7B"
-              fontSize={11}
-              fontFamily="ui-monospace"
-              tickLine={false}
-              axisLine={{ stroke: '#371E7B', strokeWidth: 2 }}
+              stroke="#000000"
+              fontSize={10}
+              fontFamily="monospace"
+              tickLine={true}
+              axisLine={{ stroke: '#000000', strokeWidth: 2 }}
               tickFormatter={formatYAxis}
               domain={[yMin - yPadding, yMax + yPadding]}
-              label={{
-                value: 'Net Profit ($)',
-                angle: -90,
-                position: 'insideLeft',
-                style: {
-                  fontSize: 10,
-                  fontWeight: 'bold',
-                  textTransform: 'uppercase',
-                  fill: '#371E7B',
-                },
-              }}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#000', strokeWidth: 1, strokeDasharray: '4 4' }} />
 
-            {/* Breakeven reference line at y=0 */}
             <ReferenceLine
               y={0}
-              stroke="#ef4444"
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              label={{
-                value: 'Breakeven',
-                position: 'right',
-                style: {
-                  fontSize: 10,
-                  fontWeight: 'bold',
-                  fill: '#ef4444',
-                  textTransform: 'uppercase',
-                },
-              }}
+              stroke="#000000"
+              strokeWidth={1}
+              strokeDasharray="4 4"
             />
 
-            {/* Profit line */}
             <Line
-              type="monotone"
+              type="step"
               dataKey="profit"
-              stroke="#6366f1"
-              strokeWidth={3}
+              stroke="#000000"
+              strokeWidth={2}
               dot={false}
               activeDot={{
-                r: 6,
-                fill: '#6366f1',
-                stroke: '#371E7B',
+                r: 4,
+                fill: '#000000',
+                stroke: '#ffffff',
                 strokeWidth: 2,
               }}
             />
@@ -222,17 +210,19 @@ export default function BreakevenChart({
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-2 flex items-center justify-between text-[10px] font-mono text-[#371E7B] uppercase tracking-wider border-t border-[#371E7B]/20 pt-2">
+      <div className="mt-2 flex items-center justify-between text-[10px] font-mono uppercase tracking-wider border-t-2 border-bit-black pt-2">
         <span>
           Cost: <span className="font-bold">${migrationCost.toFixed(2)}</span>
         </span>
         <span>
-          Daily Yield: <span className="font-bold text-green-600">+${dailyYieldDelta.toFixed(2)}</span>
+          Daily: <span className="font-bold">+${dailyYieldDelta.toFixed(2)}</span>
         </span>
         <span>
-          Timeframe: <span className="font-bold">{calculatedTimeframe} days</span>
+          Time: <span className="font-bold">{calculatedTimeframe} days</span>
         </span>
       </div>
     </div>
   );
 }
+
+export default memo(BreakevenChart);

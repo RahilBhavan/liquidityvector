@@ -11,23 +11,39 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        'lv-indigo': '#371E7B',
-        'lv-lime': '#CCFF00',
-        'lv-offwhite': '#F9F9F5',
-        'lv-indigo-light': '#4C2A9E',
+        'bit-bg': '#FFFFFF',
+        'bit-fg': '#000000',
+        'bit-dim': '#E5E5E5', // For disabled states, technically gray but used sparingly or dithering fallback
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        heading: ['Space Grotesk', 'sans-serif'],
-        mono: ['ui-monospace', 'SFMono-Regular', 'monospace'],
+        sans: ['"Courier Prime"', '"Courier New"', 'monospace'], // Default to mono for everything
+        pixel: ['"Press Start 2P"', 'monospace'], // Headers
+        mono: ['"Courier Prime"', '"Courier New"', 'monospace'],
       },
       boxShadow: {
-        'lv': '4px 4px 0px 0px #371E7B',
-        'lv-lg': '8px 8px 0px 0px #371E7B',
-        'lv-xl': '12px 12px 0px 0px #371E7B',
-        'lv-lime': '4px 4px 0px 0px #CCFF00',
-        'lv-active': '2px 2px 0px 0px #371E7B',
+        'hard': '4px 4px 0 0 #000000',
+        'hard-sm': '2px 2px 0 0 #000000',
+        'hard-inv': '4px 4px 0 0 #FFFFFF',
+        'none': 'none',
       },
+      borderWidth: {
+        DEFAULT: '2px',
+        '1': '1px',
+        '2': '2px',
+        '4': '4px',
+      },
+      backgroundImage: {
+        // CSS-only dither patterns
+        'dither-checker': 'repeating-linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000), repeating-linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000)',
+        'dither-light': 'radial-gradient(#000 1px, transparent 1px)',
+        'dither-scanline': 'linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1))',
+        'grid-paper': "linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)",
+      },
+      backgroundSize: {
+        'dither-light': '4px 4px',
+        'dither-scanline': '100% 4px',
+        'grid-20': '20px 20px',
+      }
     },
   },
   plugins: [],
