@@ -4,7 +4,7 @@ Application configuration with security-focused defaults.
 
 from pydantic_settings import BaseSettings
 from pydantic import field_validator
-from typing import List, Dict
+from typing import List, Dict, Any, Union
 import logging
 import os
 
@@ -22,7 +22,9 @@ class Settings(BaseSettings):
     # CORS Configuration
     # Default to localhost for development convenience. 
     # In production, this MUST be overridden by environment variable.
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
+    # Changed to Any to prevent Pydantic from automatically trying to JSON-decode 
+    # comma-separated environment variables.
+    ALLOWED_ORIGINS: Any = ["http://localhost:3000", "http://localhost:5173"]
 
     # Environment (development, staging, production)
     ENVIRONMENT: str = "development"
