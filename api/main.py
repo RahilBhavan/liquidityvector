@@ -32,31 +32,23 @@ logger.info("Initializing Liquidity Vector API...")
 
 # ... existing code ...
 
-# CORS Configuration - Managed via config.py
-# If wildcard is used, we must handle allow_credentials carefully to avoid startup crash
-origins = [str(origin) for origin in settings.ALLOWED_ORIGINS]
-allow_all = "*" in origins
+# ... existing imports ...
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=not allow_all, # credentials cannot be used with wildcard in FastAPI/Starlette
-    allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
-    expose_headers=["X-Request-ID"],
-    max_age=600,
-)
-
+# Attach rate limiter to app state and add exception handler
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint with circuit breaker status for monitoring."""
-    circuits = get_circuit_states()
-    return {
-        "status": "healthy",
-        "version": "1.0.0",
-        "circuits": circuits
-    }
+    """
+    Simplified health check.
+    Railway requires a 200 response to mark the service as healthy.
+    """
+    return {"status": "ok", "service": "liquidityvector-api"}
+
+# --- Custom Exception Handlers ---
+# ... existing exception handlers ...
+
 
 
 @app.get("/debug/test-alert")
