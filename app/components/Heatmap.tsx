@@ -8,16 +8,12 @@ interface HeatmapProps {
   capital: number;
 }
 
-// Configuration matching backend profitability matrix
-const CAPITAL_MULTIPLIERS = [0.5, 0.75, 1, 1.25, 1.5, 2, 5];
+const CAPITAL_MULTIPLIERS = [0.5, 1, 1.5, 2, 5];
 const TIME_HORIZONS = [7, 14, 30, 90, 180, 365];
-
-// Intensity scaling factor for color calculation
 const INTENSITY_SCALE = 200;
 
 function Heatmap({ route, capital }: HeatmapProps) {
-  const hasBackendMatrix = route.profitabilityMatrix &&
-    Object.keys(route.profitabilityMatrix).length > 0;
+  const hasBackendMatrix = route.profitabilityMatrix && Object.keys(route.profitabilityMatrix).length > 0;
 
   const getProfitability = useMemo(() => {
     if (hasBackendMatrix) {
@@ -27,7 +23,6 @@ function Heatmap({ route, capital }: HeatmapProps) {
         return route.profitabilityMatrix[multiplierKey]?.[daysKey] ?? 0;
       };
     }
-
     const costRatio = route.totalCost / capital;
     return (multiplier: number, days: number): number => {
       const simCapital = capital * multiplier;
@@ -38,67 +33,87 @@ function Heatmap({ route, capital }: HeatmapProps) {
   }, [hasBackendMatrix, route.profitabilityMatrix, route.totalCost, route.targetPool.apy, capital]);
 
   const getCellClass = (profit: number): string => {
-    if (profit <= 0) return 'bg-bit-white text-bit-black'; // Loss
+    if (profit <= 0) return 'bg-bit-bg text-bit-fg opacity-50'; // Loss (dimmed)
     const intensity = Math.min(Math.abs(profit) / INTENSITY_SCALE, 1);
     
-    if (intensity < 0.3) return 'pattern-stipple-light text-bit-black font-bold';
-    if (intensity < 0.7) return 'pattern-checker text-bit-black font-bold';
-    return 'bg-bit-black text-bit-white font-bold';
+    if (intensity < 0.3) return 'pattern-stipple-light bg-bit-bg text-bit-fg';
+    if (intensity < 0.7) return 'pattern-checker bg-bit-bg text-bit-fg';
+    return 'bg-bit-fg text-bit-bg'; // High profit (inverted)
   };
 
   const formatProfit = (profit: number): string => {
     const prefix = profit > 0 ? '+' : '';
-    if (Math.abs(profit) > 999) {
-      return `${prefix}${(profit / 1000).toFixed(1)}k`;
-    }
+    if (Math.abs(profit) > 999) return `${prefix}${(profit / 1000).toFixed(1)}k`;
     return `${prefix}${profit.toFixed(0)}`;
   };
 
   return (
-    <div className="bg-bit-white border-2 border-bit-black p-4 h-full flex flex-col shadow-hard">
-      <h3 className="text-lg font-bold font-pixel uppercase mb-6 flex items-center gap-2">
-        <span className="w-3 h-3 bg-bit-black"></span>
-        Profitability Matrix
+    <div className="card-1bit p-6 h-full flex flex-col relative overflow-hidden group">
+      <div className="absolute top-0 right-0 p-2 opacity-10 pointer-events-none">
+        <div className="w-16 h-16 pattern-checker rounded-full"></div>
+      </div>
+
+      <h3 className="text-lg font-bold font-pixel uppercase mb-6 flex items-center gap-3 border-b-2 border-bit-fg pb-2 w-fit">
+        <span className="w-3 h-3 bg-bit-fg animate-pulse"></span>
+        Profit_Matrix
       </h3>
-      <div className="overflow-x-auto flex-1 flex flex-col justify-center">
-        <div className="min-w-[400px]">
-          {/* Header row */}
-          <div className="flex mb-2">
-            <div className="w-24 text-xs font-mono font-bold flex items-end uppercase">
-              Time \ Cap
+
+      <div className="overflow-x-auto custom-scrollbar pb-2">
+        <div className="min-w-[500px]">
+          {/* Matrix Header */}
+          <div className="grid grid-cols-6 gap-2 mb-2">
+            <div className="text-[10px] font-bold font-mono uppercase flex items-end justify-center opacity-70">
+              Days \ Cap
             </div>
             {CAPITAL_MULTIPLIERS.map(step => (
-              <div
-                key={step}
-                className="flex-1 text-center text-xs font-mono font-bold pb-2 border-b-2 border-bit-black mx-0.5"
-              >
+              <div key={step} className="text-center font-bold font-mono text-xs border-b-2 border-bit-fg pb-1">
                 ${(capital * step / 1000).toFixed(1)}k
               </div>
             ))}
           </div>
 
-          {/* Data rows */}
-          {TIME_HORIZONS.map(days => (
-            <div key={days} className="flex mb-1 h-10">
-              <div className="w-24 text-xs font-mono font-bold flex items-center pr-4 border-r-2 border-bit-black">
-                {days} DAYS
+          {/* Matrix Rows */}
+          <div className="space-y-2">
+            {TIME_HORIZONS.map(days => (
+              <div key={days} className="grid grid-cols-6 gap-2 items-center hover:bg-bit-dim/10 transition-colors rounded-sm group/row">
+                <div className="font-bold font-mono text-xs text-right pr-2 border-r-2 border-bit-fg h-full flex items-center justify-end">
+                  {days}d
+                </div>
+                {CAPITAL_MULTIPLIERS.map(step => {
+                  const profit = getProfitability(step, days);
+                  return (
+                    <div
+                      key={step}
+                      className={`
+                        h-8 flex items-center justify-center font-mono text-[10px] font-bold border border-bit-fg 
+                        transition-transform hover:scale-110 hover:z-10 cursor-crosshair
+                        ${getCellClass(profit)}
+                      `}
+                      title={`Profit: $${profit.toFixed(2)}`}
+                    >
+                      {formatProfit(profit)}
+                    </div>
+                  );
+                })}
               </div>
-              {CAPITAL_MULTIPLIERS.map(step => {
-                const profit = getProfitability(step, days);
-                return (
-                  <div
-                    key={step}
-                    className={`flex-1 mx-0.5 border border-bit-black flex items-center justify-center text-[10px] font-mono relative group cursor-default transition-none hover:invert-1bit ${getCellClass(profit)}`}
-                  >
-                    <span className="opacity-0 group-hover:opacity-100 absolute -top-10 left-1/2 -translate-x-1/2 bg-bit-black text-bit-white px-2 py-1 text-xs whitespace-nowrap z-20 border-2 border-bit-white shadow-hard pointer-events-none">
-                      ${profit.toFixed(0)}
-                    </span>
-                    {formatProfit(profit)}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="mt-auto pt-4 flex items-center justify-end gap-4 text-[10px] font-mono uppercase font-bold border-t-2 border-bit-fg">
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 border border-bit-fg bg-bit-bg opacity-50"></div> Loss
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 border border-bit-fg pattern-stipple-light"></div> Low
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 border border-bit-fg pattern-checker"></div> Med
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 border border-bit-fg bg-bit-fg"></div> High
         </div>
       </div>
     </div>

@@ -2,8 +2,8 @@
 
 import { useMemo, memo } from 'react';
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -11,7 +11,7 @@ import {
   ReferenceLine,
   ResponsiveContainer,
 } from 'recharts';
-import { TrendingUp, AlertTriangle } from 'lucide-react';
+import { TrendingUp, AlertTriangle, Clock } from 'lucide-react';
 import { ChartDataPoint } from '@/types';
 
 interface BreakevenChartProps {
@@ -33,26 +33,21 @@ interface CustomTooltipProps {
   label?: number;
 }
 
-// Maximum data points for performance
 const MAX_DATA_POINTS = 100;
 const DEFAULT_TIMEFRAME = 30;
 
-const CustomTooltip = memo(({
-  active,
-  payload,
-  label,
-}: CustomTooltipProps) => {
+const CustomTooltip = memo(({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     const profit = payload[0].value as number;
     const isPositive = profit >= 0;
     return (
-      <div className="bg-bit-white text-bit-black px-4 py-2 border-2 border-bit-black shadow-hard">
-        <p className="font-mono text-sm font-bold uppercase">Day {label}</p>
-        <p className="font-mono text-lg font-bold">
+      <div className="bg-bit-bg text-bit-fg px-3 py-2 border-2 border-bit-fg shadow-hard z-50">
+        <p className="font-mono text-xs font-bold uppercase mb-1 border-b border-bit-fg pb-1">Day {label}</p>
+        <p className="font-mono text-sm font-bold">
           {isPositive ? '+' : ''}${profit.toFixed(2)}
         </p>
-        <p className="text-[10px] uppercase tracking-wider">
-          {isPositive ? 'PROFIT' : 'LOSS'}
+        <p className={`text-[10px] uppercase tracking-wider mt-1 ${isPositive ? 'text-bit-fg' : 'opacity-70'}`}>
+          {isPositive ? 'IN PROFIT' : 'RECOVERING'}
         </p>
       </div>
     );
@@ -70,11 +65,9 @@ function BreakevenChart({
   breakevenDays: providedBreakevenDays,
 }: BreakevenChartProps) {
   const { data, breakevenDay, calculatedTimeframe, hasBreakeven } = useMemo(() => {
-    // Use backend-provided data if available
     if (breakevenChartData && breakevenChartData.length > 0) {
       const lastPoint = breakevenChartData[breakevenChartData.length - 1];
       const calculatedTimeframe = lastPoint?.day ?? DEFAULT_TIMEFRAME;
-
       return {
         data: breakevenChartData,
         breakevenDay: providedBreakevenDays ?? null,
@@ -83,7 +76,6 @@ function BreakevenChart({
       };
     }
 
-    // Fallback: calculate locally
     let breakevenDay: number | null = null;
     let hasBreakeven = false;
 
@@ -114,112 +106,96 @@ function BreakevenChart({
     return { data, breakevenDay, calculatedTimeframe, hasBreakeven };
   }, [migrationCost, dailyYieldDelta, timeframeDays, breakevenChartData, providedBreakevenDays]);
 
-  // Calculate Y-axis domain
   const yMin = Math.min(...data.map(d => d.profit));
   const yMax = Math.max(...data.map(d => d.profit));
   const yPadding = Math.max(Math.abs(yMax - yMin) * 0.1, 10);
 
-  // Format Y-axis ticks
   const formatYAxis = (value: number) => {
-    if (Math.abs(value) >= 1000) {
-      return `$${(value / 1000).toFixed(1)}k`;
-    }
+    if (Math.abs(value) >= 1000) return `$${(value / 1000).toFixed(1)}k`;
     return `$${value.toFixed(0)}`;
   };
 
-  // Check if chart will never break even
   const neverBreaksEven = dailyYieldDelta <= 0 && migrationCost > 0;
 
   return (
-    <div className="bg-bit-white border-2 border-bit-black p-4 h-80 flex flex-col shadow-hard">
-      <div className="flex items-center justify-between mb-4 border-b-2 border-bit-black pb-2">
+    <div className="card-1bit p-6 h-80 flex flex-col relative group">
+      <div className="absolute top-4 right-4 opacity-50">
+        <Clock className="w-12 h-12 text-bit-fg stroke-1" />
+      </div>
+
+      <div className="flex items-center justify-between mb-4 border-b-2 border-bit-fg pb-2 relative z-10">
         <h3 className="text-lg font-bold font-pixel uppercase flex items-center gap-2">
-          <span className="w-3 h-3 bg-bit-black"></span>
-          Breakeven Timeline
+          <span className="w-3 h-3 bg-bit-fg animate-pulse"></span>
+          Breakeven_Horizon
         </h3>
         {hasBreakeven && breakevenDay !== null && breakevenDay > 0 && (
-          <div className="flex items-center gap-2 bg-bit-white border-2 border-bit-black px-2 py-1 shadow-sm">
+          <div className="flex items-center gap-2 bg-bit-fg text-bit-bg px-2 py-1 shadow-hard-sm">
             <TrendingUp className="w-4 h-4" />
             <span className="font-mono text-xs font-bold uppercase">
-              Day {Math.ceil(breakevenDay)}
+              {Math.ceil(breakevenDay)} DAYS
             </span>
           </div>
         )}
         {neverBreaksEven && (
-          <div className="flex items-center gap-2 bg-bit-black text-bit-white px-2 py-1">
+          <div className="flex items-center gap-2 border-2 border-bit-fg bg-bit-bg px-2 py-1 pattern-diagonal">
             <AlertTriangle className="w-4 h-4" />
-            <span className="font-mono text-xs font-bold uppercase">
-              No Breakeven
-            </span>
+            <span className="font-mono text-xs font-bold uppercase">NEVER</span>
           </div>
         )}
       </div>
 
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 relative z-10">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={data}
-            margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
-          >
-            <CartesianGrid
-              strokeDasharray="2 2"
-              stroke="#000000"
-              strokeOpacity={0.2}
-              vertical={false}
+          <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--bit-fg)" stopOpacity={0.1}/>
+                <stop offset="95%" stopColor="var(--bit-fg)" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--bit-fg)" strokeOpacity={0.15} vertical={false} />
+            <XAxis 
+              dataKey="day" 
+              stroke="var(--bit-fg)" 
+              fontSize={10} 
+              fontFamily="monospace" 
+              tickLine={false}
+              axisLine={{ stroke: 'var(--bit-fg)', strokeWidth: 2 }}
+              tickMargin={8}
             />
-            <XAxis
-              dataKey="day"
-              stroke="#000000"
-              fontSize={10}
-              fontFamily="monospace"
-              tickLine={true}
-              axisLine={{ stroke: '#000000', strokeWidth: 2 }}
-            />
-            <YAxis
-              stroke="#000000"
-              fontSize={10}
-              fontFamily="monospace"
-              tickLine={true}
-              axisLine={{ stroke: '#000000', strokeWidth: 2 }}
+            <YAxis 
+              stroke="var(--bit-fg)" 
+              fontSize={10} 
+              fontFamily="monospace" 
+              tickLine={false}
+              axisLine={{ stroke: 'var(--bit-fg)', strokeWidth: 2 }}
               tickFormatter={formatYAxis}
               domain={[yMin - yPadding, yMax + yPadding]}
+              width={40}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#000', strokeWidth: 1, strokeDasharray: '4 4' }} />
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--bit-fg)', strokeWidth: 1, strokeDasharray: '2 2' }} />
+            
+            <ReferenceLine y={0} stroke="var(--bit-fg)" strokeWidth={1} strokeDasharray="4 4" opacity={0.5} />
+            
+            {hasBreakeven && breakevenDay && (
+               <ReferenceLine x={breakevenDay} stroke="var(--bit-fg)" strokeWidth={1} strokeDasharray="4 4" label={{ value: 'BE', position: 'insideTopRight', fill: 'var(--bit-fg)', fontSize: 10, fontWeight: 'bold' }} />
+            )}
 
-            <ReferenceLine
-              y={0}
-              stroke="#000000"
-              strokeWidth={1}
-              strokeDasharray="4 4"
-            />
-
-            <Line
+            <Area
               type="step"
               dataKey="profit"
-              stroke="#000000"
+              stroke="var(--bit-fg)"
               strokeWidth={2}
-              dot={false}
-              activeDot={{
-                r: 4,
-                fill: '#000000',
-                stroke: '#ffffff',
-                strokeWidth: 2,
-              }}
+              fill="url(#profitGradient)"
+              animationDuration={1500}
             />
-          </LineChart>
+          </AreaChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-2 flex items-center justify-between text-[10px] font-mono uppercase tracking-wider border-t-2 border-bit-black pt-2">
-        <span>
-          Cost: <span className="font-bold">${migrationCost.toFixed(2)}</span>
-        </span>
-        <span>
-          Daily: <span className="font-bold">+${dailyYieldDelta.toFixed(2)}</span>
-        </span>
-        <span>
-          Time: <span className="font-bold">{calculatedTimeframe} days</span>
-        </span>
+      <div className="mt-2 flex items-center justify-between text-[10px] font-mono uppercase tracking-wider opacity-80 pt-2 border-t border-bit-fg/20">
+        <span>INITIAL_COST: <span className="font-bold">${migrationCost.toFixed(2)}</span></span>
+        <span>DELTA_YIELD: <span className="font-bold">+${dailyYieldDelta.toFixed(2)}/day</span></span>
       </div>
     </div>
   );

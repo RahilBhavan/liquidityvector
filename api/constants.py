@@ -51,49 +51,115 @@ BASE_GAS_LIMITS = {
 # Bridge protocol metadata with security profiles
 BRIDGE_OPTIONS: list[BridgeMetadata] = [
     BridgeMetadata(
-        name="Stargate",
+        name="Stargate V2",
         type="LayerZero",
-        age_years=2.5,
-        tvl=450,
+        age_years=3.0,
+        tvl=320,
         has_exploits=False,
         base_time=2
     ),
     BridgeMetadata(
-        name="Across",
+        name="Across Protocol",
         type="Intent",
-        age_years=1.5,
-        tvl=200,
+        age_years=2.5,
+        tvl=450,
         has_exploits=False,
         base_time=1
     ),
     BridgeMetadata(
-        name="Hop",
+        name="Hop Protocol",
         type="Liquidity",
-        age_years=3.5,
+        age_years=4.0,
         tvl=65,
         has_exploits=False,
-        base_time=10
+        base_time=8
     ),
     BridgeMetadata(
         name="Synapse",
         type="Liquidity",
-        age_years=2.8,
-        tvl=110,
+        age_years=3.5,
+        tvl=120,
         has_exploits=True,
         base_time=4,
         exploit_data=ExploitData(
             year=2021,
             amount="$8M",
-            description="Vulnerability in AMM pool logic allowing skewed trades.",
-            report_url="https://rekt.news/"
+            description="Metapool logic error allowed unbalanced AMM trades during high volatility.",
+            report_url="https://rekt.news/synapse-rekt/"
         )
     ),
     BridgeMetadata(
-        name="Native Bridge",
-        type="Canonical",
-        age_years=4.0,
-        tvl=5000,
-        has_exploits=False,
-        base_time=20
+        name="Multichain (Legacy)",
+        type="Liquidity",
+        age_years=5.0,
+        tvl=0,
+        has_exploits=True,
+        base_time=999,
+        exploit_data=ExploitData(
+            year=2023,
+            amount="$126M",
+            description="Unauthorized access to MPC keys lead to massive drain of Fantom/Moonriver bridges.",
+            report_url="https://rekt.news/multichain-rekt/"
+        )
     ),
+    BridgeMetadata(
+        name="Nomad",
+        type="Optimistic",
+        age_years=2.0,
+        tvl=5,
+        has_exploits=True,
+        base_time=35,
+        exploit_data=ExploitData(
+            year=2022,
+            amount="$190M",
+            description="Improper root validation allowed attackers to spoof messages and drain all funds.",
+            report_url="https://rekt.news/nomad-rekt/"
+        )
+    ),
+    BridgeMetadata(
+        name="Wormhole",
+        type="Guardian",
+        age_years=3.5,
+        tvl=850,
+        has_exploits=True,
+        base_time=5,
+        exploit_data=ExploitData(
+            year=2022,
+            amount="$320M",
+            description="Signature verification bypass on Solana-Ethereum bridge (replenished by VC).",
+            report_url="https://rekt.news/wormhole-rekt/"
+        )
+    ),
+    BridgeMetadata(
+        name="Hyphen",
+        type="Liquidity",
+        age_years=2.5,
+        tvl=80,
+        has_exploits=False,
+        base_time=2
+    ),
+    BridgeMetadata(
+        name="Arbitrum Bridge",
+        type="Canonical",
+        age_years=3.0,
+        tvl=2800,
+        has_exploits=False,
+        base_time=15
+    ),
+    BridgeMetadata(
+        name="Optimism Gateway",
+        type="Canonical",
+        age_years=3.0,
+        tvl=1200,
+        has_exploits=False,
+        base_time=15
+    ),
+    BridgeMetadata(
+        name="Base Bridge",
+        type="Canonical",
+        age_years=1.5,
+        tvl=1500,
+        has_exploits=False,
+        base_time=15
+    )
 ]
