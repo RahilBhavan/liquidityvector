@@ -5,8 +5,30 @@
 @tailwind utilities;
 
 :root {
-  --bit-black: #000000;
-  --bit-white: #FFFFFF;
+  /* Default: Monochrome (Paper) */
+  --bit-bg: #FFFFFF;
+  --bit-fg: #000000;
+  --bit-dim: #E5E5E5;
+  --bit-accent: #000000;
+  --scan-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='amber'] {
+  /* Amber Phosphor */
+  --bit-bg: #1a1200;
+  --bit-fg: #ffb000;
+  --bit-dim: #4a3200;
+  --bit-accent: #ffd040;
+  --scan-color: rgba(255, 176, 0, 0.15);
+}
+
+[data-theme='green'] {
+  /* Green Phosphor */
+  --bit-bg: #001200;
+  --bit-fg: #00ff00;
+  --bit-dim: #003300;
+  --bit-accent: #40ff40;
+  --scan-color: rgba(0, 255, 0, 0.15);
 }
 
 * {
@@ -15,101 +37,117 @@
 
 body {
   font-family: 'Courier Prime', 'Courier New', monospace;
-  background-color: var(--bit-white);
-  color: var(--bit-black);
+  background-color: var(--bit-bg);
+  color: var(--bit-fg);
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  overflow: hidden; /* Prevent body scroll, handle in containers */
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Press Start 2P', monospace;
-  font-size: 0.8em; /* Adjusted for Press Start 2P scaling */
+  font-size: 0.8em;
   line-height: 1.5;
   text-transform: uppercase;
 }
 
-/* 1-Bit Custom Scrollbar */
+/* Custom Scrollbar - Themed */
 ::-webkit-scrollbar {
   width: 16px;
   height: 16px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bit-white);
-  border-left: 2px solid var(--bit-black);
-  background-image: radial-gradient(var(--bit-black) 1px, transparent 1px);
+  background: var(--bit-bg);
+  border-left: 2px solid var(--bit-fg);
+  background-image: radial-gradient(var(--bit-fg) 1px, transparent 1px);
   background-size: 4px 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--bit-white);
-  border: 2px solid var(--bit-black);
-  box-shadow: 2px 2px 0 0 var(--bit-black);
+  background: var(--bit-bg);
+  border: 2px solid var(--bit-fg);
+  box-shadow: 2px 2px 0 0 var(--bit-fg);
 }
 
 ::-webkit-scrollbar-thumb:active {
-  background: var(--bit-black);
+  background: var(--bit-fg);
   box-shadow: none;
   transform: translate(2px, 2px);
 }
 
 ::-webkit-scrollbar-corner {
-  background: var(--bit-black);
+  background: var(--bit-fg);
 }
 
 /* ===========================
-   1-BIT DITHERING PATTERNS
+   ANIMATIONS (Meaningful Motion)
    =========================== */
 
-/* Checkered pattern (50% density) */
-.pattern-checker {
-  background-image:
-    linear-gradient(45deg, var(--bit-black) 25%, transparent 25%),
-    linear-gradient(-45deg, var(--bit-black) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, var(--bit-black) 75%),
-    linear-gradient(-45deg, transparent 75%, var(--bit-black) 75%);
-  background-size: 4px 4px;
-  background-position: 0 0, 0 2px, 2px -2px, -2px 0px;
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
 }
 
-/* Light stipple (25% density) */
-.pattern-stipple-light {
-  background-image: radial-gradient(var(--bit-black) 1px, transparent 1px);
-  background-size: 4px 4px;
+@keyframes flicker {
+  0% { opacity: 0.97; }
+  5% { opacity: 0.95; }
+  10% { opacity: 0.97; }
+  15% { opacity: 1; }
+  95% { opacity: 1; }
+  98% { opacity: 0.98; }
+  100% { opacity: 0.97; }
 }
 
-/* Medium stipple (50% density) */
-.pattern-stipple-medium {
-  background-image: radial-gradient(var(--bit-black) 1px, transparent 1px);
-  background-size: 2px 2px;
+@keyframes slide-in-right {
+  0% { transform: translateX(20px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
 }
 
-/* Dense stipple (75% density) */
-.pattern-stipple-dense {
-  background-color: var(--bit-black);
-  background-image: radial-gradient(var(--bit-white) 1px, transparent 1px);
-  background-size: 4px 4px;
+@keyframes pulse-attention {
+  0% { box-shadow: 0 0 0 0 var(--bit-fg); }
+  70% { box-shadow: 0 0 0 4px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
 }
 
-/* Scanline overlay */
-.scanlines::after {
-  content: '';
+.animate-scanline::before {
+  content: " ";
+  display: block;
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
   bottom: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 1px,
-    rgba(0, 0, 0, 0.1) 1px, /* Increased visibility for 1-bit feel */
-    rgba(0, 0, 0, 0.1) 3px
-  );
+  right: 0;
+  background: linear-gradient(to bottom, transparent 50%, var(--scan-color) 51%);
+  background-size: 100% 4px;
   pointer-events: none;
-  z-index: 9999;
+  z-index: 50;
+}
+
+.animate-scanline::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: rgba(18, 16, 16, 0.1);
+  opacity: 0;
+  z-index: 50;
+  pointer-events: none;
+  animation: flicker 0.15s infinite;
+}
+
+.animate-entry {
+  animation: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pulse-slow {
+  animation: pulse-attention 2s infinite;
 }
 
 /* ===========================
@@ -117,46 +155,80 @@ h1, h2, h3, h4, h5, h6 {
    =========================== */
 
 @layer components {
-  /* Button base - inverts on hover */
+  /* Dithering Patterns - Themed */
+  .pattern-checker {
+    background-image:
+      linear-gradient(45deg, var(--bit-fg) 25%, transparent 25%),
+      linear-gradient(-45deg, var(--bit-fg) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, var(--bit-fg) 75%),
+      linear-gradient(-45deg, transparent 75%, var(--bit-fg) 75%);
+    background-size: 4px 4px;
+  }
+
+  .pattern-stipple-light {
+    background-image: radial-gradient(var(--bit-fg) 1px, transparent 1px);
+    background-size: 4px 4px;
+  }
+  
+  .pattern-diagonal {
+    background-image: repeating-linear-gradient(
+      45deg,
+      var(--bit-fg),
+      var(--bit-fg) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+  }
+
+  /* Button base */
   .btn-1bit {
-    @apply bg-bit-white text-bit-black border-2 border-bit-black shadow-hard px-4 py-2 font-mono text-xs uppercase font-bold tracking-wider;
-    transition: none; /* Instant transition for retro feel */
+    @apply bg-bit-bg text-bit-fg border-2 border-bit-fg shadow-hard px-4 py-2 font-mono text-xs uppercase font-bold tracking-wider cursor-pointer select-none;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
   }
 
   .btn-1bit:hover {
-    @apply bg-bit-dim shadow-hard-sm;
-    background-image: radial-gradient(#000 1px, transparent 1px);
-    background-size: 4px 4px;
+    @apply bg-bit-dim;
     transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 0 var(--bit-fg);
   }
 
   .btn-1bit:active {
-    @apply bg-bit-black text-bit-white shadow-none;
+    @apply bg-bit-fg text-bit-bg;
     transform: translate(4px, 4px);
+    box-shadow: none;
   }
 
   /* Card base */
   .card-1bit {
-    @apply bg-bit-white border-2 border-bit-black shadow-hard;
+    @apply bg-bit-bg border-2 border-bit-fg shadow-hard;
   }
+  
+  /* Utilities */
+  .text-bit-fg { color: var(--bit-fg); }
+  .bg-bit-bg { background-color: var(--bit-bg); }
+  .bg-bit-fg { background-color: var(--bit-fg); }
+  .text-bit-bg { color: var(--bit-bg); }
+  .border-bit-fg { border-color: var(--bit-fg); }
+  .shadow-hard { box-shadow: 4px 4px 0 0 var(--bit-fg); }
+  .shadow-hard-sm { box-shadow: 2px 2px 0 0 var(--bit-fg); }
 }
 
 /* Loading animation - barber pole stripes */
 @keyframes barber-pole {
   0% { background-position: 0 0; }
-  100% { background-position: 28px 28px; } /* Adjusted for new size */
+  100% { background-position: 28px 28px; }
 }
 
 .loading-1bit {
   background-image: repeating-linear-gradient(
     45deg,
-    var(--bit-black),
-    var(--bit-black) 10px,
-    var(--bit-white) 10px,
-    var(--bit-white) 20px
+    var(--bit-fg),
+    var(--bit-fg) 10px,
+    var(--bit-bg) 10px,
+    var(--bit-bg) 20px
   );
   animation: barber-pole 1s linear infinite;
-  border: 2px solid var(--bit-black);
+  border: 2px solid var(--bit-fg);
 }
 
 /* Blinking cursor */
@@ -170,6 +242,6 @@ h1, h2, h3, h4, h5, h6 {
   display: inline-block;
   width: 10px;
   height: 1.2em;
-  background-color: var(--bit-black);
+  background-color: var(--bit-fg);
   vertical-align: text-bottom;
 }

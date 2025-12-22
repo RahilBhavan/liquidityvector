@@ -8,6 +8,7 @@ import Heatmap from './Heatmap';
 import Advisor from './Advisor';
 import BreakevenChart from './BreakevenChart';
 import InfrastructureModal from './InfrastructureModal';
+import TextReveal from './ui/TextReveal';
 import { RefreshCw, AlertTriangle, ChevronLeft, ChevronRight, ShieldCheck, ShieldAlert, Star, Zap, Waves, Globe, ArrowRightLeft, Landmark } from 'lucide-react';
 
 interface DashboardProps {
@@ -122,18 +123,22 @@ export default function Dashboard({ settings, setFetching, walletAddress }: Dash
   };
 
   return (
-    <div className="p-4 md:p-8 h-full overflow-y-auto bg-bit-white text-bit-black font-mono">
+    <div className="p-4 md:p-8 h-full overflow-y-auto bg-bit-bg text-bit-fg font-mono relative">
       <InfrastructureModal selectedRoute={selectedRoute} onClose={() => setSelectedRoute(null)} />
 
-      <div className="flex items-end justify-between mb-8 border-b-2 border-bit-black pb-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 border-b-2 border-bit-fg pb-4 gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-pixel uppercase mb-2">Protocol Analysis</h2>
-          <p className="text-xs font-bold uppercase">SCANNING {Object.keys(Chain).length} NETWORKS FOR ARBITRAGE VECTORS.</p>
+          <h2 className="text-2xl md:text-3xl font-pixel uppercase mb-2">
+            <TextReveal text="Protocol Analysis" speed={50} />
+          </h2>
+          <p className="text-xs font-bold uppercase opacity-80">
+            SCANNING {Object.keys(Chain).length} NETWORKS FOR ARBITRAGE VECTORS.
+          </p>
         </div>
         <button
           onClick={calculateStrategies}
           disabled={loading}
-          className="btn-1bit flex items-center gap-2"
+          className="btn-1bit flex items-center gap-2 w-full md:w-auto justify-center"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           <span>{loading ? 'SCANNING...' : 'FETCH_DATA'}</span>
@@ -141,17 +146,19 @@ export default function Dashboard({ settings, setFetching, walletAddress }: Dash
       </div>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-bit-black">
-          <div className="w-16 h-16 loading-1bit mb-4 border-2 border-bit-black"></div>
-          <p className="font-pixel text-xs uppercase animate-pulse">QUERYING_CHAIN_DATA...</p>
+        <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-bit-fg animate-scanline relative overflow-hidden">
+          <div className="w-16 h-16 loading-1bit mb-4 border-2 border-bit-fg"></div>
+          <p className="font-pixel text-xs uppercase animate-pulse">
+            <TextReveal text="QUERYING_CHAIN_DATA..." speed={30} delay={200} />
+          </p>
         </div>
       ) : error ? (
-        <div className="flex flex-col items-center justify-center h-64 border-2 border-bit-black pattern-checker p-6 text-center bg-bit-white">
-          <div className="w-16 h-16 bg-bit-white border-2 border-bit-black flex items-center justify-center mb-4 shadow-hard">
+        <div className="flex flex-col items-center justify-center h-64 border-2 border-bit-fg pattern-checker p-6 text-center bg-bit-bg">
+          <div className="w-16 h-16 bg-bit-bg border-2 border-bit-fg flex items-center justify-center mb-4 shadow-hard">
             <AlertTriangle className="w-8 h-8" />
           </div>
-          <h3 className="font-pixel text-lg mb-2 uppercase bg-bit-white px-2">Connection Error</h3>
-          <p className="text-sm max-w-md mb-8 bg-bit-white px-2 border-2 border-bit-black">{error}</p>
+          <h3 className="font-pixel text-lg mb-2 uppercase bg-bit-bg px-2">Connection Error</h3>
+          <p className="text-sm max-w-md mb-8 bg-bit-bg px-2 border-2 border-bit-fg">{error}</p>
           <button
             onClick={calculateStrategies}
             className="btn-1bit"
@@ -160,12 +167,12 @@ export default function Dashboard({ settings, setFetching, walletAddress }: Dash
           </button>
         </div>
       ) : bestRoute ? (
-        <div className="space-y-8">
-          <div>
+        <div className="space-y-8 animate-entry">
+          <div className="animate-entry" style={{ animationDelay: '0.1s' }}>
             <RouteCard route={bestRoute} currentChain={settings.currentChain} />
           </div>
 
-          <div>
+          <div className="animate-entry" style={{ animationDelay: '0.2s' }}>
             <BreakevenChart
               migrationCost={bestRoute.totalCost}
               dailyYieldDelta={bestRoute.dailyYieldUsd || (bestRoute.targetPool.apy / 100) * settings.capital / 365}
@@ -175,22 +182,22 @@ export default function Dashboard({ settings, setFetching, walletAddress }: Dash
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div>
+            <div className="animate-entry" style={{ animationDelay: '0.3s' }}>
               <Heatmap route={bestRoute} capital={settings.capital} />
             </div>
-            <div>
+            <div className="animate-entry" style={{ animationDelay: '0.4s' }}>
               <Advisor route={bestRoute} settings={settings} />
             </div>
           </div>
 
-          <div className="mt-12">
-            <div className="flex items-center justify-between mb-4 border-l-4 border-bit-black pl-4">
+          <div className="mt-12 animate-entry" style={{ animationDelay: '0.5s' }}>
+            <div className="flex items-center justify-between mb-4 border-l-4 border-bit-fg pl-4">
               <h3 className="text-xl font-pixel uppercase">Alternative Vectors</h3>
             </div>
 
-            <div className="bg-bit-white border-2 border-bit-black overflow-x-auto shadow-hard">
-              <table className="w-full text-left text-xs uppercase">
-                <thead className="bg-bit-black text-bit-white font-bold border-b-2 border-bit-black">
+            <div className="bg-bit-bg border-2 border-bit-fg overflow-x-auto shadow-hard custom-scrollbar">
+              <table className="w-full text-left text-xs uppercase min-w-[800px]">
+                <thead className="bg-bit-fg text-bit-bg font-bold border-b-2 border-bit-fg">
                   <tr>
                     <th className="px-4 py-3">Protocol</th>
                     <th className="px-4 py-3">Chain</th>
@@ -202,7 +209,7 @@ export default function Dashboard({ settings, setFetching, walletAddress }: Dash
                     <th className="px-4 py-3 text-right">Net(30d)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y-2 divide-bit-black font-mono font-bold">
+                <tbody className="divide-y-2 divide-bit-fg font-mono font-bold">
                   {currentPageData.map((r, i) => {
                     const isHighRisk = r.riskLevel > settings.riskTolerance;
                     const isBest = r === bestRoute;
@@ -210,7 +217,8 @@ export default function Dashboard({ settings, setFetching, walletAddress }: Dash
                       <tr
                         key={i}
                         onClick={() => setSelectedRoute(r)}
-                        className={`cursor-pointer hover:bg-bit-black hover:text-bit-white group ${isBest ? 'pattern-stipple-light' : ''}`}
+                        className={`cursor-pointer hover:bg-bit-fg hover:text-bit-bg group transition-colors ${isBest ? 'pattern-stipple-light' : ''}`}
+                        style={{ animationDelay: `${0.1 * i}s` }}
                       >
                         <td className="px-4 py-3">
                           <div className="flex flex-col gap-1">
@@ -232,7 +240,7 @@ export default function Dashboard({ settings, setFetching, walletAddress }: Dash
                         <td className="px-4 py-3 text-right">${r.totalCost.toFixed(2)}</td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex justify-end items-center gap-2">
-                             {isHighRisk && <ShieldAlert className="w-3 h-3" />}
+                             {isHighRisk && <ShieldAlert className="w-3 h-3 text-bit-accent animate-pulse" />}
                              {renderRiskBar(r.riskLevel)}
                           </div>
                         </td>
@@ -246,11 +254,11 @@ export default function Dashboard({ settings, setFetching, walletAddress }: Dash
               </table>
 
               {totalPages > 1 && (
-                <div className="flex items-center justify-between p-2 border-t-2 border-bit-black bg-bit-white">
+                <div className="flex items-center justify-between p-2 border-t-2 border-bit-fg bg-bit-bg">
                   <button
                     onClick={handlePrevPage}
                     disabled={currentPage === 1}
-                    className="flex items-center gap-2 px-4 py-2 font-bold uppercase disabled:opacity-50 hover:bg-bit-black hover:text-bit-white"
+                    className="flex items-center gap-2 px-4 py-2 font-bold uppercase disabled:opacity-50 hover:bg-bit-fg hover:text-bit-bg"
                   >
                     <ChevronLeft className="w-4 h-4" /> Prev
                   </button>
@@ -260,7 +268,7 @@ export default function Dashboard({ settings, setFetching, walletAddress }: Dash
                   <button
                     onClick={handleNextPage}
                     disabled={currentPage === totalPages}
-                    className="flex items-center gap-2 px-4 py-2 font-bold uppercase disabled:opacity-50 hover:bg-bit-black hover:text-bit-white"
+                    className="flex items-center gap-2 px-4 py-2 font-bold uppercase disabled:opacity-50 hover:bg-bit-fg hover:text-bit-bg"
                   >
                     Next <ChevronRight className="w-4 h-4" />
                   </button>
@@ -270,8 +278,8 @@ export default function Dashboard({ settings, setFetching, walletAddress }: Dash
           </div>
         </div>
       ) : (
-        <div className="text-center py-20 border-2 border-dashed border-bit-black">
-          <div className="w-16 h-16 border-2 border-bit-black flex items-center justify-center mx-auto mb-4 shadow-hard">
+        <div className="text-center py-20 border-2 border-dashed border-bit-fg">
+          <div className="w-16 h-16 border-2 border-bit-fg flex items-center justify-center mx-auto mb-4 shadow-hard">
             <ShieldCheck className="w-8 h-8" />
           </div>
           <p className="font-pixel mb-2">NO ROUTES FOUND</p>

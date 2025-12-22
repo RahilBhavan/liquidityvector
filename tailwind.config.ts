@@ -11,21 +11,23 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        'bit-bg': '#FFFFFF',
-        'bit-fg': '#000000',
-        'bit-white': '#FFFFFF',
-        'bit-black': '#000000',
-        'bit-dim': '#E5E5E5', // For disabled states, technically gray but used sparingly or dithering fallback
+        'bit-bg': 'var(--bit-bg)',
+        'bit-fg': 'var(--bit-fg)',
+        'bit-dim': 'var(--bit-dim)',
+        'bit-accent': 'var(--bit-accent)',
+        'scan': 'var(--scan-color)',
+        'bit-white': 'var(--bit-bg)', // Backward compatibility alias
+        'bit-black': 'var(--bit-fg)', // Backward compatibility alias
       },
       fontFamily: {
-        sans: ['"Courier Prime"', '"Courier New"', 'monospace'], // Default to mono for everything
-        pixel: ['"Press Start 2P"', 'monospace'], // Headers
+        sans: ['"Courier Prime"', '"Courier New"', 'monospace'],
+        pixel: ['"Press Start 2P"', 'monospace'],
         mono: ['"Courier Prime"', '"Courier New"', 'monospace'],
       },
       boxShadow: {
-        'hard': '4px 4px 0 0 #000000',
-        'hard-sm': '2px 2px 0 0 #000000',
-        'hard-inv': '4px 4px 0 0 #FFFFFF',
+        'hard': '4px 4px 0 0 var(--bit-fg)',
+        'hard-sm': '2px 2px 0 0 var(--bit-fg)',
+        'hard-inv': '4px 4px 0 0 var(--bit-bg)',
         'none': 'none',
       },
       borderWidth: {
@@ -35,11 +37,8 @@ const config: Config = {
         '4': '4px',
       },
       backgroundImage: {
-        // CSS-only dither patterns
-        'dither-checker': 'repeating-linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000), repeating-linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000)',
-        'dither-light': 'radial-gradient(#000 1px, transparent 1px)',
-        'dither-scanline': 'linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1))',
-        'grid-paper': "linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)",
+        // Dither patterns handled in CSS layers now for theming support
+        // Keeping these for legacy if needed, but globals.css handles the dynamic vars
       },
       backgroundSize: {
         'dither-light': '4px 4px',
