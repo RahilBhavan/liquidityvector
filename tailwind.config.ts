@@ -13,6 +13,8 @@ const config: Config = {
       colors: {
         'bit-bg': '#FFFFFF',
         'bit-fg': '#000000',
+        'bit-white': '#FFFFFF',
+        'bit-black': '#000000',
         'bit-dim': '#E5E5E5', // For disabled states, technically gray but used sparingly or dithering fallback
       },
       fontFamily: {

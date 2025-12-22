@@ -17,7 +17,22 @@ class Chain(str, Enum):
     Polygon = "Polygon"
     Avalanche = "Avalanche"
     BNBChain = "BNB Chain"
-    BSC = "BNB Chain"  # Alias for BNB Chain
+
+    @classmethod
+    def from_string(cls, value: str) -> "Chain":
+        """Convert string to Chain with alias support."""
+        aliases = {
+            "bsc": cls.BNBChain,
+            "binance": cls.BNBChain,
+            "binance smart chain": cls.BNBChain,
+        }
+        lower_val = value.lower().strip()
+        if lower_val in aliases:
+            return aliases[lower_val]
+        for chain in cls:
+            if chain.value.lower() == lower_val:
+                return chain
+        return cls(value)
 
 
 class Pool(BaseModel):

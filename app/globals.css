@@ -116,27 +116,29 @@ h1, h2, h3, h4, h5, h6 {
    1-BIT UTILITY CLASSES
    =========================== */
 
-/* Button base - inverts on hover */
-.btn-1bit {
-  @apply bg-bit-white text-bit-black border-2 border-bit-black shadow-hard px-4 py-2 font-mono text-xs uppercase font-bold tracking-wider;
-  transition: none; /* Instant transition for retro feel */
-}
+@layer components {
+  /* Button base - inverts on hover */
+  .btn-1bit {
+    @apply bg-bit-white text-bit-black border-2 border-bit-black shadow-hard px-4 py-2 font-mono text-xs uppercase font-bold tracking-wider;
+    transition: none; /* Instant transition for retro feel */
+  }
 
-.btn-1bit:hover {
-  @apply bg-bit-dim shadow-hard-sm;
-  background-image: radial-gradient(#000 1px, transparent 1px);
-  background-size: 4px 4px;
-  transform: translate(2px, 2px);
-}
+  .btn-1bit:hover {
+    @apply bg-bit-dim shadow-hard-sm;
+    background-image: radial-gradient(#000 1px, transparent 1px);
+    background-size: 4px 4px;
+    transform: translate(2px, 2px);
+  }
 
-.btn-1bit:active {
-  @apply bg-bit-black text-bit-white shadow-none;
-  transform: translate(4px, 4px);
-}
+  .btn-1bit:active {
+    @apply bg-bit-black text-bit-white shadow-none;
+    transform: translate(4px, 4px);
+  }
 
-/* Card base */
-.card-1bit {
-  @apply bg-bit-white border-2 border-bit-black shadow-hard;
+  /* Card base */
+  .card-1bit {
+    @apply bg-bit-white border-2 border-bit-black shadow-hard;
+  }
 }
 
 /* Loading animation - barber pole stripes */

@@ -18,7 +18,9 @@
       "Bash(git init:*)",
       "Bash(forge build:*)",
       "Bash(forge test:*)",
-      "Bash(timeout 15 python:*)"
+      "Bash(timeout 15 python:*)",
+      "Bash(ls:*)",
+      "Bash(chmod:*)"
     ]
   }
 }

@@ -6,17 +6,19 @@ Provides real-time yield data, gas calculations, and route analysis.
 """
 
 import logging
-import os
+import re
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-from .models import AnalyzeRequest, RouteCalculation, YieldResponse
-from .services import get_service, cleanup_service, ExternalAPIError, InsufficientLiquidityError, BridgeRouteError
+from .models import AnalyzeRequest, RouteCalculation, YieldResponse, Chain
+from .services import get_service, cleanup_service
+from .exceptions import ExternalAPIError, InsufficientLiquidityError, BridgeRouteError
 from .resilience import get_circuit_states
 from .config import settings
 
@@ -29,6 +31,53 @@ logger = logging.getLogger("liquidityvector")
 
 # Rate limiter using client IP address
 limiter = Limiter(key_func=get_remote_address)
+
+# Ethereum address validation regex
+ETH_ADDRESS_PATTERN = re.compile(r"^0x[a-fA-F0-9]{40}$")
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Add security headers to all responses."""
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+
+        # Security headers
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+        # Cache control for API responses
+        if request.url.path.startswith("/api") or request.url.path in ["/pools", "/analyze"]:
+            response.headers["Cache-Control"] = "no-store, max-age=0"
+
+        return response
+
+
+def validate_wallet_address(address: str) -> bool:
+    """Validate Ethereum wallet address format."""
+    return bool(ETH_ADDRESS_PATTERN.match(address))
+
+
+def validate_chain_param(chain: str) -> str:
+    """Validate and normalize chain parameter."""
+    chain_lower = chain.lower().strip()
+    valid_chains = {
+        "ethereum", "eth",
+        "arbitrum", "arb",
+        "base",
+        "optimism", "op",
+        "polygon", "matic",
+        "avalanche", "avax",
+        "bnb chain", "bnbchain", "bsc", "binance"
+    }
+    if chain_lower not in valid_chains:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported chain: {chain}. Valid chains: Ethereum, Arbitrum, Base, Optimism, Polygon, Avalanche, BNB Chain"
+        )
+    return chain_lower
 
 
 @asynccontextmanager
@@ -78,13 +127,18 @@ async def route_exception_handler(request: Request, exc: BridgeRouteError):
         content={"detail": str(exc), "error_type": "BridgeRouteError"}
     )
 
+# Security headers middleware (must be added first)
+app.add_middleware(SecurityHeadersMiddleware)
+
 # CORS Configuration - Managed via config.py
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[str(origin) for origin in settings.ALLOWED_ORIGINS],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+    expose_headers=["X-Request-ID"],
+    max_age=600,  # Cache preflight requests for 10 minutes
 )
 
 
@@ -144,13 +198,32 @@ async def analyze_route(request: Request, body: AnalyzeRequest):
 
     Rate limited to 60 requests per minute per IP.
     """
+    # Input validation
+    if not validate_wallet_address(body.wallet_address):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid wallet address format. Must be a valid Ethereum address (0x...)"
+        )
+
+    if body.capital <= 0 or body.capital > 100_000_000:
+        raise HTTPException(
+            status_code=400,
+            detail="Capital must be between 0 and 100,000,000 USD"
+        )
+
+    if body.pool_apy < 0 or body.pool_apy > 1000:
+        raise HTTPException(
+            status_code=400,
+            detail="APY must be between 0% and 1000%"
+        )
+
     service = get_service()
     try:
         # Normalize target_chain string (handle BSC alias)
         target_chain_normalized = body.target_chain
         if target_chain_normalized.upper() == "BSC":
             target_chain_normalized = "BNB Chain"
-        
+
         # Create a new request with normalized chain
         normalized_request = AnalyzeRequest(
             capital=body.capital,
@@ -163,10 +236,11 @@ async def analyze_route(request: Request, body: AnalyzeRequest):
             tvl_usd=body.tvl_usd,
             wallet_address=body.wallet_address
         )
-        
+
         result = await service.analyze_route(normalized_request)
         logger.info(f"Analyze endpoint: {body.current_chain.value} -> {normalized_request.target_chain}")
         return result
+
     except ValueError as e:
         logger.warning(f"Validation error in analyze: {e}")
         raise HTTPException(status_code=400, detail=str(e))
@@ -180,8 +254,8 @@ async def analyze_route(request: Request, body: AnalyzeRequest):
         logger.warning(f"Bridge route error in analyze: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.error(f"Analysis failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+        logger.error(f"Analysis failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Analysis failed. Please try again.")
 
 
 @app.get("/yield/{chain}", response_model=YieldResponse)
@@ -244,7 +318,7 @@ async def get_native_token_price(request: Request, chain: str):
         if not chain_enum:
             raise HTTPException(status_code=400, detail=f"Unsupported chain: {chain}")
 
-        price = await service._get_native_token_price(chain_enum)
+        price = await service.get_native_token_price(chain_enum)
         logger.info(f"Price endpoint: {chain} -> ${price:.2f}")
         return {"chain": chain, "price_usd": price}
     except Exception as e:

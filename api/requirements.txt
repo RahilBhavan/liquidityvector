@@ -15,5 +15,8 @@ pydantic>=2.5.0
 
 # Resilience & Error Handling
 slowapi>=0.1.9          # Rate limiting for FastAPI
-pybreaker>=1.0.1        # Circuit breaker pattern
 cachetools>=5.3.0       # TTL caching for gas prices
+
+# Performance optimizations
+uvloop>=0.19.0          # Fast event loop for asyncio
+httptools>=0.6.0        # Fast HTTP parsing

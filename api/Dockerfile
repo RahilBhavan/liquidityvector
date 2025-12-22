@@ -19,6 +19,12 @@ RUN pip install --user --no-cache-dir -r requirements.txt
 # Final stage
 FROM python:3.11-slim
 
+# Install curl for health checks
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
 # Create a non-root user
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
@@ -30,6 +36,11 @@ COPY --from=builder /root/.local /home/appuser/.local
 
 # Ensure the local bin is in PATH
 ENV PATH=/home/appuser/.local/bin:$PATH
+
+# Set Python environment variables for optimization
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONHASHSEED=random
 
 # Copy application code
 COPY . ./api
@@ -46,9 +57,9 @@ USER appuser
 # Expose port
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+# Health check using curl
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:8000/health || exit 1
 
-# Command to run the application
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Command to run the application with optimized settings
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--loop", "uvloop", "--http", "httptools"]

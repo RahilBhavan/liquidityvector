@@ -1,49 +1,144 @@
+"""
+Application configuration with security-focused defaults.
+"""
+
 from pydantic_settings import BaseSettings
-from pydantic import AnyHttpUrl, field_validator
-from typing import List, Union
+from pydantic import field_validator
+from typing import List, Dict
 import logging
+import os
+
+from .models import Chain
+
+logger = logging.getLogger("liquidityvector.config")
+
 
 class Settings(BaseSettings):
     """
     Application settings managed by Pydantic.
     Reads from environment variables and provides validation.
     """
+
     # CORS Configuration
-    ALLOWED_ORIGINS: List[str] = []
+    # Default to localhost for development convenience. 
+    # In production, this MUST be overridden by environment variable.
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
 
-    # API Keys (Optional with defaults for dev, Required for Prod in theory)
-    # Add actual API keys here as needed, e.g., DEFILLAMA_API_KEY: str = ""
-
-    # Environment
+    # Environment (development, staging, production)
     ENVIRONMENT: str = "development"
+
+    # Rate limiting configuration
+    RATE_LIMIT_PER_MINUTE: int = 60
+
+    # Request timeout in seconds
+    REQUEST_TIMEOUT: float = 10.0
+
+    # RPC Endpoints - can be overridden via environment variables
+    # Format: RPC_URL_ETHEREUM, RPC_URL_ARBITRUM, etc.
+    RPC_URL_ETHEREUM: str = "https://eth.llamarpc.com"
+    RPC_URL_ARBITRUM: str = "https://arb1.arbitrum.io/rpc"
+    RPC_URL_BASE: str = "https://mainnet.base.org"
+    RPC_URL_OPTIMISM: str = "https://mainnet.optimism.io"
+    RPC_URL_POLYGON: str = "https://polygon-rpc.com"
+    RPC_URL_AVALANCHE: str = "https://api.avax.network/ext/bc/C/rpc"
+    RPC_URL_BNBCHAIN: str = "https://bsc-dataseed.binance.org"
+
+    @property
+    def RPC_URLS(self) -> Dict[Chain, str]:
+        """Get RPC URLs mapped by Chain enum."""
+        return {
+            Chain.Ethereum: self.RPC_URL_ETHEREUM,
+            Chain.Arbitrum: self.RPC_URL_ARBITRUM,
+            Chain.Base: self.RPC_URL_BASE,
+            Chain.Optimism: self.RPC_URL_OPTIMISM,
+            Chain.Polygon: self.RPC_URL_POLYGON,
+            Chain.Avalanche: self.RPC_URL_AVALANCHE,
+            Chain.BNBChain: self.RPC_URL_BNBCHAIN,
+        }
+
+    @property
+    def is_production(self) -> bool:
+        """Check if running in production mode."""
+        return self.ENVIRONMENT.lower() == "production"
+
+    @property
+    def is_development(self) -> bool:
+        """Check if running in development mode."""
+        return self.ENVIRONMENT.lower() == "development"
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
     def parse_allowed_origins(cls, v):
+        """Parse ALLOWED_ORIGINS from comma-separated string or list."""
         if isinstance(v, str):
             if not v or v.strip() == "":
                 return []
-            # Handle comma-separated strings
-            return [origin.strip() for origin in v.split(",")]
-        return v
+            # Handle comma-separated strings, filter empty values
+            return [
+                origin.strip()
+                for origin in v.split(",")
+                if origin.strip()
+            ]
+        return v if v else []
 
-    def validate_production_security(self):
+    @field_validator("ENVIRONMENT", mode="before")
+    @classmethod
+    def validate_environment(cls, v):
+        """Validate environment value."""
+        valid_envs = {"development", "staging", "production"}
+        env = str(v).lower().strip()
+        if env not in valid_envs:
+            logger.warning(
+                f"Unknown ENVIRONMENT '{v}', defaulting to 'development'. "
+                f"Valid values: {valid_envs}"
+            )
+            return "development"
+        return env
+
+    def validate_production_security(self) -> None:
         """
         Enforce security rules for production environment.
+        Logs warnings for misconfigurations.
         """
-        if self.ENVIRONMENT.lower() == "production":
-            if not self.ALLOWED_ORIGINS:
-                logging.warning("⚠️  PRODUCTION SECURITY WARNING: ALLOWED_ORIGINS is empty. API will reject all CORS requests.")
-            
-            # Check for generic wildcards which are dangerous in production
-            for origin in self.ALLOWED_ORIGINS:
-                if str(origin) == "*":
-                    logging.error("🚨 SECURITY CRITICAL: Wildcard '*' in ALLOWED_ORIGINS is unsafe for production!")
-                    # In a strict mode, we might want to raise an error here
-                    # raise ValueError("Wildcard CORS origin not allowed in production")
+        if not self.is_production:
+            return
+
+        # Check CORS configuration
+        if not self.ALLOWED_ORIGINS:
+            logger.warning(
+                "PRODUCTION SECURITY WARNING: ALLOWED_ORIGINS is empty. "
+                "API will reject all CORS requests from browsers."
+            )
+
+        # Check for dangerous wildcard
+        for origin in self.ALLOWED_ORIGINS:
+            if origin == "*":
+                logger.error(
+                    "SECURITY CRITICAL: Wildcard '*' in ALLOWED_ORIGINS is unsafe "
+                    "for production! This allows any website to make requests."
+                )
+                # Optionally raise in strict mode
+                if os.getenv("STRICT_SECURITY", "").lower() == "true":
+                    raise ValueError("Wildcard CORS origin not allowed in production")
+
+            # Warn about HTTP origins in production
+            if origin.startswith("http://") and "localhost" not in origin:
+                logger.warning(
+                    f"SECURITY WARNING: Non-HTTPS origin '{origin}' in production. "
+                    "Consider using HTTPS for all production origins."
+                )
+
+        logger.info(
+            f"Production security validation complete. "
+            f"CORS origins: {len(self.ALLOWED_ORIGINS)}"
+        )
 
     class Config:
         env_file = ".env"
+        env_file_encoding = "utf-8"
         case_sensitive = True
+        extra = "ignore"  # Ignore extra env vars
 
+
+# Create singleton settings instance
 settings = Settings()

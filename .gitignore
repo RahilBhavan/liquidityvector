@@ -69,3 +69,24 @@ contracts/cache/
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Docker
+certs/
+*.pem
+
+# Coverage reports
+coverage/
+*.lcov
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+
+# Secrets (never commit)
+*.secret
+*.key
+secrets.json

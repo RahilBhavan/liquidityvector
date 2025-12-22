@@ -1,0 +1,134 @@
+# Production Docker Compose for Liquidity Vector
+# Usage: docker-compose -f docker-compose.prod.yml up -d --build
+#
+# Required environment variables (set in .env or shell):
+#   - NEXT_PUBLIC_BACKEND_URL
+#   - NEXT_PUBLIC_GEMINI_API_KEY
+#   - NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
+#   - ALLOWED_ORIGINS
+
+version: '3.8'
+
+services:
+  # ===========================================
+  # Backend API (FastAPI)
+  # ===========================================
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: liquidityvector-api
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
+      - RPC_URL_ETHEREUM=${RPC_URL_ETHEREUM:-}
+      - RPC_URL_ARBITRUM=${RPC_URL_ARBITRUM:-}
+      - RPC_URL_BASE=${RPC_URL_BASE:-}
+      - RPC_URL_OPTIMISM=${RPC_URL_OPTIMISM:-}
+      - RPC_URL_POLYGON=${RPC_URL_POLYGON:-}
+      - RPC_URL_AVALANCHE=${RPC_URL_AVALANCHE:-}
+      - RPC_URL_BNBCHAIN=${RPC_URL_BNBCHAIN:-}
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - liquidityvector-network
+
+  # ===========================================
+  # Frontend (Next.js)
+  # ===========================================
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL:-http://api:8000}
+        - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-/api/backend}
+        - NEXT_PUBLIC_GEMINI_API_KEY=${NEXT_PUBLIC_GEMINI_API_KEY}
+        - NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=${NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID}
+    container_name: liquidityvector-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - liquidityvector-network
+
+  # ===========================================
+  # Nginx Reverse Proxy (Optional)
+  # ===========================================
+  nginx:
+    image: nginx:alpine
+    container_name: liquidityvector-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - web
+      - api
+    restart: always
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - liquidityvector-network
+    profiles:
+      - with-nginx
+
+networks:
+  liquidityvector-network:
+    driver: bridge
+
+# ===========================================
+# Volumes (for persistent data if needed)
+# ===========================================
+volumes:
+  certs:
+    driver: local
