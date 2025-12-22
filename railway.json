@@ -2,11 +2,15 @@
   "$schema": "https://railway.app/split-config.schema.json",
   "build": {
     "builder": "DOCKERFILE",
-    "dockerfilePath": "Dockerfile.frontend"
+    "dockerfilePath": "api/Dockerfile",
+    "context": "."
   },
   "deploy": {
     "numReplicas": 1,
     "sleepService": false,
-    "restartPolicyType": "ON_FAILURE"
+    "restartPolicyType": "ON_FAILURE",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 5,
+    "proxyTimeout": 60
   }
 }
