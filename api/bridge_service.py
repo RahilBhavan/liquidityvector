@@ -5,7 +5,7 @@ from .models import Chain, BridgeMetadata, BridgeQuote, BridgeQuoteResult
 from .constants import CHAIN_IDS, USDC_ADDRESSES, BRIDGE_OPTIONS
 from .exceptions import ExternalAPIError
 from .resilience import lifi_breaker, bridge_quote_cache, call_async
-from core.risk.scoring import calculate_risk_score
+from .core.risk.scoring import calculate_risk_score
 import httpx
 
 logger = logging.getLogger("liquidityvector.bridge_service")
