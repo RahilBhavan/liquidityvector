@@ -111,17 +111,17 @@ To transform from a *Tool* to a *Protocol*, LiquidityVector requires a native to
 
 To evaluate model success, track:
 
-1.  **Breakeven Accuracy (BA):**
-    $$ BA = \frac{|P_{projected} - P_{actual}|}{P_{actual}} $$
-    *Goal: < 5% variance.*
+1. **Breakeven Accuracy (BA):**
+   $$BA = \frac{|P_{\text{projected}} - P_{\text{actual}}|}{P_{\text{actual}}}$$
+   *Goal: < 5% variance.*
 
-2.  **Capital Efficiency Score (CES):**
-    $$ CES = \frac{\sum P_{net}(User)}{\sum Gas_{spent}} $$
-    *Goal: > 1.0 (Users earn more than they burn).*
+2. **Capital Efficiency Score (CES):**
+   $$CES = \frac{\sum P_{\text{net}}(\text{User})}{\sum \text{Gas}_{\text{spent}}}$$
+   *Goal: > 1.0 (Users earn more than they burn).*
 
-3.  **Protocol Capture Rate (PCR):** (Post-Token)
-    $$ PCR = \frac{Revenue_{protocol}}{Volume_{bridged}} $$
-    *Target: 0.05% (Standard aggregator take).*
+3. **Protocol Capture Rate (PCR):** (Post-Token)
+   $$PCR = \frac{\text{Revenue}_{\text{protocol}}}{\text{Volume}_{\text{bridged}}}$$
+   *Target: 0.05% (Standard aggregator take).*
 
 ---
 
