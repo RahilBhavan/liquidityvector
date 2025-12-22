@@ -1,40 +1,46 @@
 # 💧 Liquidity Vector
 
 **The Intelligent DeFi Decision Engine.**  
-Optimize your cross-chain capital allocation with real-time breakeven analysis, AI risk scoring, and a human-centered interface.
+Optimize cross-chain capital allocation with real-time breakeven analysis, deterministic risk scoring, and a human-centered minimalist interface.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Next.js](https://img.shields.io/badge/Frontend-Next.js%2015-black)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688)](https://fastapi.tiangolo.com/)
 [![Docker](https://img.shields.io/badge/Deployment-Docker-blue)](https://www.docker.com/)
+[![CI/CD](https://github.com/RahilBhavan/liquidityvector_gemini/actions/workflows/ci.yml/badge.svg)](https://github.com/RahilBhavan/liquidityvector_gemini/actions)
 
 ---
 
-## 🎯 The Problem
-DeFi yields are fragmented. While high APYs on new chains are tempting, the "friction costs"—gas fees, bridge tolls, slippage, and time—often make rotation unprofitable for smaller capital sizes.
+## 🎯 Value Proposition
 
-**Liquidity Vector** answers the critical question: *"Is it worth moving my money?"*
+In the fragmented DeFi landscape, yield arbitrage is often a "friction trap." Higher APYs on distant chains are frequently offset by gas fees, bridge tolls, slippage, and the opportunity cost of time. 
+
+**Liquidity Vector** provides institutional-grade clarity, answering the binary question: *"Will this rotation result in a net profit within my specific time horizon?"*
 
 ---
 
-## ✨ Key Innovations
+## ✨ Core Innovations
 
 ### 📈 Multi-Dimensional Breakeven Engine
-Calculates the exact **Breakeven Horizon** (in days/hours) for any rotation. It accounts for:
-- Round-trip gas costs (Source + Destination).
-- Bridge fees and estimated slippage.
-- Opportunity cost of time-to-liquidity.
+Moves beyond simple APY comparison to calculate the exact **Breakeven Horizon**.
+- **Round-Trip Accounting**: Factors in both entry AND exit costs (often ignored by competitors).
+- **Proportional Scaling**: Automatically adjusts bridge fees vs. gas costs based on user capital size.
+- **Dynamic Charting**: Visualizes profit trajectory using high-performance Area Charts.
 
-### 🛡️ Security Dossiers (Real-World Intel)
-Moves beyond raw numbers to provide qualitative risk assessment.
-- **V-Score**: A rigorous 1-100 deterministic security rating based on 6 weighted factors: Bridge Architecture, Protocol Age, TVL Depth, Exploit History, Contract Verification, and Chain Maturity.
-- **Historical Context**: Built-in data on major historical exploits (e.g., Multichain $126M, Wormhole $320M) to warn users about fragile infrastructure.
+### 🛡️ Rigorous Risk Scoring (V-Score)
+A deterministic 1-100 security rating based on 6 weighted quantitative and qualitative factors:
+- **Bridge Architecture (25%)**: Prioritizes Canonical and Intent-based systems.
+- **Protocol Maturity (20%)**: Factors in the Lindy Effect and mainnet uptime.
+- **Liquidity Depth (20%)**: Evaluates TVL robustness against slippage.
+- **Exploit History (20%)**: Heavy penalties for historical security incidents (linked to REKT database).
+- **Contract Verification (10%)**: Automated verification checks via block explorers.
+- **Network Stability (5%)**: Maturity of the underlying chain.
 
-### 🍏 Apple-Inspired Minimalist UI
-A radical departure from cluttered DeFi dashboards. Optimized for **Focus** and **Empathy**:
-- Glassmorphism effects for visual depth.
-- Generous whitespace to reduce cognitive load.
-- Seamless "Vibe Shifts" between Monochrome, Amber, and Green terminal themes.
+### 🍏 Apple-Inspired Minimalist UX
+A radical departure from high-noise DeFi dashboards. 
+- **Focus**: Generous whitespace and glassmorphism to reduce cognitive load.
+- **Empathy**: Professional "Technical Dossiers" explain security risks in human language.
+- **Snappy Iteration**: Optimized for sub-second data refreshes and instant UI feedback.
 
 ---
 
@@ -42,54 +48,93 @@ A radical departure from cluttered DeFi dashboards. Optimized for **Focus** and 
 
 ### **The Engine (Backend: Python/FastAPI)**
 - **Async Aggregator**: Concurrently queries multiple RPC nodes and bridge APIs (Li.Fi) using `asyncio` for sub-second analysis.
-- **Economic Model**: Implements vectorized profitability matrices to simulate 30+ scenarios (Time x Capital) instantly.
-- **Resilience Layer**: Robust circuit breakers and TTL caching to handle blockchain RPC instability.
+- **Vectorized Models**: Implements matrix-based profitability projections to simulate 30+ scenarios (Time x Capital) per request.
+- **Resilience Layer**: Robust circuit breakers (`pybreaker`) and TTL caching to mitigate blockchain infrastructure instability.
 
 ### **The Interface (Frontend: Next.js/React)**
-- **Real-time Visualization**: High-performance Area Charts (Recharts) showing profit accumulation zones.
-- **Web3 Ready**: Integrated with **RainbowKit** and **Wagmi** for seamless wallet connectivity and chain synchronization.
-- **Vibe Coding Workflow**: Built using high-level architectural direction and rapid AI-assisted iteration cycles.
+- **Modern Stack**: Next.js 15 (App Router), TypeScript, and Tailwind CSS.
+- **Web3 Integration**: Seamless wallet connectivity via **RainbowKit** and **Wagmi v2**.
+- **Responsive Geometry**: Fluid layout that transitions from a data-heavy desktop terminal to a clean mobile summary.
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Getting Started
 
-### **Docker (Recommended)**
-Run the entire stack (Frontend + API) with a single command:
+### **Prerequisites**
+- Docker & Docker Compose
+- Node.js 20+ (for manual setup)
+- Python 3.11+ (for manual setup)
+
+### **Docker Deployment (Recommended)**
+The simplest way to run the full production-ready stack:
 ```bash
 docker-compose -f docker-compose.prod.yml up -d --build
 ```
-- **UI**: [http://localhost:3000](http://localhost:3000)
-- **API**: [http://localhost:8000](http://localhost:8000)
+- **Frontend**: [http://localhost:3000](http://localhost:3000)
+- **API (Swagger)**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-### **Manual Setup**
-1. **Backend**:
+### **Manual Development Setup**
+
+1. **Clone & Install**
    ```bash
-   pip install -r api/requirements.txt
-   uvicorn api.main:app --reload
-   ```
-2. **Frontend**:
-   ```bash
+   git clone https://github.com/RahilBhavan/liquidityvector_gemini.git
+   cd liquidityvector_gemini
    npm install
+   ```
+
+2. **Backend API**
+   ```bash
+   cd api
+   python -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   uvicorn main:app --reload --port 8000
+   ```
+
+3. **Frontend UI**
+   ```bash
+   # In root directory
    npm run dev
    ```
 
 ---
 
-## 🧠 Methodology: Vibe Coding
-This project was developed using the **Vibe Coding** philosophy:
-1. **Architect as Pilot**: Defining high-level system design and unique value propositions.
-2. **AI as Navigator**: Using state-of-the-art AI agents to handle boilerplate, CSS implementation, and complex data normalization.
-3. **Rapid Pivot**: Demonstrating the agility to completely refactor the design system from "Retro Terminal" to "Modern Minimalist" in a single development session.
+## 🔧 Environment Configuration
+
+Create a `.env.local` (Frontend) and `api/.env` (Backend) based on the provided `.env.example` templates.
+
+| Variable | Description |
+| :--- | :--- |
+| `NEXT_PUBLIC_GEMINI_API_KEY` | Google Gemini API key for AI-powered advisory. |
+| `ALLOWED_ORIGINS` | CORS whitelist for the API (default: localhost:3000). |
+| `RPC_URL_*` | (Optional) Custom RPC endpoints for improved gas accuracy. |
 
 ---
 
-## 📁 Project Structure
-- `/api`: FastAPI backend and aggregator logic.
-- `/app`: Next.js 15 frontend with the Apple Minimalist design system.
-- `/core`: Core economic modeling and risk scoring modules.
-- `/contracts`: (Optional) Solidity monitors for bridge health.
-- `/docs`: Detailed project analysis and strategic release guides.
+## 📁 Project Organization
+
+- **`/api`**: FastAPI server, orchestration services, and data providers.
+- **`/app`**: React components, themes, and application routes.
+- **`/core`**: Deterministic financial logic and risk scoring algorithms.
+- **`/contracts`**: Solidity monitors for bridge health and registry management.
+- **`/docs`**: In-depth [Project Analysis](./docs/PROJECT_ANALYSIS.md), [Economic Models](./docs/ECONOMIC_ANALYSIS_REPORT.md), and [Expansion Roadmap](./docs/EXPANSION_ROADMAP.md).
+
+---
+
+## 🧠 Methodology: Vibe Coding
+This project is a showcase of the **Vibe Coding** philosophy—where the developer acts as a **Strategic Pilot**:
+1. **Architectural Direction**: High-level system design and unique value propositions.
+2. **AI-Assisted Navigation**: Utilizing advanced agents to handle boilerplate, CSS polish, and data normalization.
+3. **Rapid Pivoting**: Demonstrating the agility to swap entire design systems and refactor core scoring math in minutes, not days.
+
+---
+
+## 🔮 Future Roadmap
+- **P0**: Integrated One-Click Bridging (via Li.Fi Widget).
+- **P1**: Automated "Vector Alerts" via Telegram/Email.
+- **P2**: On-Chain Risk Oracle for 3rd-party protocol consumption.
+
+See the full [Expansion Roadmap](./docs/EXPANSION_ROADMAP.md) for more.
 
 ---
 
@@ -101,5 +146,5 @@ This project was developed using the **Vibe Coding** philosophy:
 ---
 
 <div align="center">
-  <strong>Built for the future of capital efficiency.</strong>
+  <strong>Optimizing DeFi, one rotation at a time.</strong>
 </div>
