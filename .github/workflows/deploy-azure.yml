@@ -8,7 +8,7 @@
 #   - AZURE_REGISTRY_PASSWORD: ACR password
 #   - NEXT_PUBLIC_GEMINI_API_KEY: Gemini API key
 #   - NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: WalletConnect project ID
-#   - PRODUCTION_API_URL: e.g., https://api.yourdomain.com
+#   - PRODUCTION_API_URL: e.g., https://api.rahilbhavan.com
 
 name: Deploy to Azure
 

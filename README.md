@@ -27,7 +27,8 @@ The system employs a hybrid microservices topology:
 ```bash
 docker-compose -f docker-compose.prod.yml up -d --build
 ```
-- **Frontend**: [http://localhost:3000](http://localhost:3000)
+- **UI (Production)**: [https://liquidityvector.rahilbhavan.com](https://liquidityvector.rahilbhavan.com)
+- **UI (Local)**: [http://localhost:3000](http://localhost:3000)
 - **API (Swagger)**: [https://api.rahilbhavan.com/docs](https://api.rahilbhavan.com/docs)
 
 ### **Manual Development Setup**
