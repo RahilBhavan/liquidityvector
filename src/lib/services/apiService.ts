@@ -170,7 +170,12 @@ function transformRouteResponse(data: BackendRouteResponse): RouteCalculation {
     profitabilityMatrix: data.profitability_matrix,
     costBreakdown: transformCostBreakdown(data.cost_breakdown),
     riskWarnings: data.risk_warnings,
-    tvlSource: data.tvl_source
+    tvlSource: data.tvl_source,
+
+    // Mocking Advanced Metrics until backend is fully updated
+    safetyScore: data.risk_score ? data.risk_score / 10 : 8.5, // Convert 100-scale to 10-scale or default
+    impermanentLossRisk: 'Low', // Defaulting for now
+    auditStatus: data.has_exploits ? 'Warning' : 'Verified'
   };
 }
 

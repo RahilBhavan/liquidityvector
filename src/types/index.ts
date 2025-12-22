@@ -86,6 +86,11 @@ export interface RouteCalculation {
   // NEW: Risk assessment details
   riskWarnings: string[];
   tvlSource: string;
+
+  // Advanced Metrics for UI
+  safetyScore: number; // 0-10
+  impermanentLossRisk: 'None' | 'Low' | 'Medium' | 'High';
+  auditStatus: 'Verified' | 'Unverified' | 'Warning';
 }
 
 export interface UserSettings {
