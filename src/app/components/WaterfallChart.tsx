@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState, useEffect } from 'react';
 import {
     BarChart,
     Bar,
@@ -50,6 +50,12 @@ const CustomTooltip = memo(({ active, payload }: any) => {
 CustomTooltip.displayName = 'CustomTooltip';
 
 function WaterfallChart({ data, title = 'Net Yield Breakdown' }: WaterfallChartProps) {
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     // Transform data for waterfall display
     // For waterfall charts, we need to calculate the "base" (invisible bar) and "value" (visible bar)
     const transformedData = useMemo((): TransformedDataPoint[] => {
@@ -94,6 +100,15 @@ function WaterfallChart({ data, title = 'Net Yield Breakdown' }: WaterfallChartP
         return (
             <div className="flex flex-col h-full items-center justify-center text-secondary">
                 <p className="text-sm">No waterfall data available</p>
+            </div>
+        );
+    }
+
+    // Prevent hydration mismatch - don't render chart until mounted
+    if (!mounted) {
+        return (
+            <div className="flex flex-col h-full items-center justify-center text-secondary">
+                <p className="text-sm">Loading chart...</p>
             </div>
         );
     }

@@ -36,18 +36,25 @@ const mockStatistics = {
 };
 
 const InfrastructureModal: React.FC<InfrastructureModalProps> = ({ selectedRoute, onClose }) => {
+    const [mounted, setMounted] = useState(false);
     const [activeTab, setActiveTab] = useState<'overview' | 'projections' | 'execution'>('overview');
     const [showPreFlight, setShowPreFlight] = useState(false);
     const [preFlightChecks, setPreFlightChecks] = useState<RiskCheck[]>([]);
     const [isCheckingPreflight, setIsCheckingPreflight] = useState(false);
     const [preFlightPassed, setPreFlightPassed] = useState(false);
 
-    // Run pre-flight checks on mount
+    // Ensure hydration safety
     useEffect(() => {
-        if (selectedRoute) {
+        setMounted(true);
+    }, []);
+
+    // Run pre-flight checks after mount
+    useEffect(() => {
+        if (mounted && selectedRoute) {
             runPreFlightChecks();
         }
-    }, [selectedRoute]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mounted, selectedRoute?.targetPool?.pool]);
 
     const runPreFlightChecks = useCallback(async () => {
         if (!selectedRoute) return;

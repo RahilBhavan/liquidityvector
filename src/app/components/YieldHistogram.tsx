@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useMemo, useState } from 'react';
+import { memo, useMemo, useState, useEffect } from 'react';
 import {
     BarChart,
     Bar,
@@ -68,7 +68,12 @@ function YieldHistogram({
     currentApy,
     title = 'APY Distribution',
 }: YieldHistogramProps) {
+    const [mounted, setMounted] = useState(false);
     const [timeframe, setTimeframe] = useState<Timeframe>('30d');
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     // Transform data and mark current APY bin
     const transformedData = useMemo(() => {
@@ -88,6 +93,15 @@ function YieldHistogram({
             <div className="flex flex-col h-full items-center justify-center text-secondary p-8">
                 <BarChart3 className="w-8 h-8 mb-3 opacity-50" />
                 <p className="text-sm font-medium">No historical data available</p>
+            </div>
+        );
+    }
+
+    // Prevent hydration mismatch - wait for client mount
+    if (!mounted) {
+        return (
+            <div className="flex flex-col h-full items-center justify-center text-secondary p-8">
+                <p className="text-sm font-medium">Loading chart...</p>
             </div>
         );
     }
