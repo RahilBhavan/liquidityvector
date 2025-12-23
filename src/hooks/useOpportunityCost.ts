@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Asset } from './usePortfolio';
+import { PortfolioAsset } from './usePortfolio';
 import { Pool } from '@/types';
 import { apiService } from '@/lib/services/apiService';
 import { useQuery } from '@tanstack/react-query';
@@ -21,7 +21,7 @@ export interface PortfolioHealth {
     isLoading: boolean;
 }
 
-export function useOpportunityCost(assets: Asset[]) {
+export function useOpportunityCost(assets: PortfolioAsset[]) {
     // Fetch top pools to compare against
     const { data: topPools, isLoading: isLoadingPools } = useQuery({
         queryKey: ['topPools'],
@@ -70,7 +70,7 @@ export function useOpportunityCost(assets: Asset[]) {
 
                         opportunities.push({
                             symbol,
-                            idleAmount: parseFloat(asset.balance),
+                            idleAmount: asset.balance,
                             idleUsd: asset.valueUsd,
                             potentialApy: bestPool.apy,
                             potentialYieldYearly: potentialYield,
