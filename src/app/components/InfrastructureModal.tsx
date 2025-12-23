@@ -143,11 +143,11 @@ const InfrastructureModal: React.FC<InfrastructureModalProps> = ({ selectedRoute
                                         </span>
                                     </div>
                                     <div className="space-y-1 mt-4">
-                                        <div className="flex justify-between text-[10px] font-mono opacity-80">
-                                            <span>Base:</span> <span>10.0</span>
+                                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-wide opacity-80">
+                                            <span>Base</span> <span>10.0</span>
                                         </div>
-                                        <div className="flex justify-between text-[10px] font-mono opacity-80 text-red-300">
-                                            <span>TVL Depth:</span> <span>-0.5</span>
+                                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-wide opacity-80 text-red-300">
+                                            <span>TVL Depth</span> <span>-0.5</span>
                                         </div>
                                     </div>
                                 </div>
