@@ -62,6 +62,13 @@ export interface CostBreakdown {
   roundTripTotal: number;
 }
 
+export interface WaterfallDataPoint {
+  label: string;
+  value: number;
+  cumulative: number;
+  isPositive: boolean;
+}
+
 export interface RouteCalculation {
   targetPool: Pool;
   bridgeCost: number;
@@ -82,6 +89,7 @@ export interface RouteCalculation {
   breakevenChartData: ChartDataPoint[];
   profitabilityMatrix: Record<string, Record<string, number>>;
   costBreakdown?: CostBreakdown;
+  waterfallData?: WaterfallDataPoint[];  // Net yield waterfall chart data
 
   // NEW: Risk assessment details
   riskWarnings: string[];
@@ -119,4 +127,11 @@ export interface AdvisorResponse {
   analysis: string;
   riskScore: number;
   recommendation: 'STRONG BUY' | 'HOLD' | 'CAUTION';
+}
+
+export interface RiskCheck {
+  name: string;
+  status: 'pass' | 'warn' | 'fail';
+  message: string;
+  severity: number;  // 1-5 scale
 }

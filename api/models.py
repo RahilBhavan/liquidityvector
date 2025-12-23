@@ -88,6 +88,14 @@ class ChartDataPoint(BaseModel):
     profit: float
 
 
+class WaterfallDataPoint(BaseModel):
+    """Single bar in the waterfall chart showing cost/yield breakdown."""
+    label: str           # "Gross Yield", "Entry Gas", etc.
+    value: float         # USD amount (negative for costs)
+    cumulative: float    # Running total for bar positioning
+    is_positive: bool    # For color coding (green=positive, orange=negative)
+
+
 class RouteCalculation(BaseModel):
     """Complete route analysis result with pre-calculated visualization data."""
     target_pool: Pool
@@ -110,6 +118,7 @@ class RouteCalculation(BaseModel):
     breakeven_chart_data: list[ChartDataPoint] = []
     profitability_matrix: dict[str, dict[str, float]] = {}
     cost_breakdown: Optional[CostBreakdown] = None
+    waterfall_data: list[WaterfallDataPoint] = []  # Net yield waterfall chart data
 
     # NEW: Risk assessment details
     risk_warnings: list[str] = []
@@ -133,6 +142,23 @@ class HealthResponse(BaseModel):
     """Health check response."""
     status: str
     version: str
+
+
+class PreflightRequest(BaseModel):
+    """Request payload for /preflight endpoint."""
+    capital: float = Field(..., gt=0, description="Capital amount must be positive")
+    target_chain: str
+    pool_tvl: float = Field(..., gt=0, description="Pool TVL must be positive")
+    project: str
+    risk_score: int = Field(default=75, ge=0, le=100, description="Protocol risk score 0-100")
+
+
+class RiskCheckResponse(BaseModel):
+    """Single pre-flight check result."""
+    name: str
+    status: str  # "pass", "warn", "fail"
+    message: str
+    severity: int  # 1-5 scale
 
 
 # === NEW: Production-grade cost estimation models ===

@@ -11,7 +11,8 @@ import httpx
 from .models import (
     Chain, Pool, RouteCalculation, AnalyzeRequest,
     CostBreakdown, CostBreakdownEntry, ChartDataPoint,
-    BridgeQuote, BridgeQuoteResult, GasCostEstimate
+    BridgeQuote, BridgeQuoteResult, GasCostEstimate,
+    WaterfallDataPoint
 )
 from .yield_service import YieldService
 from .gas_service import GasService
@@ -256,6 +257,94 @@ class AggregatorService:
                 return level
         return 5
 
+    def _generate_waterfall_data(
+        self,
+        capital: float,
+        target_apy: float,
+        round_trip,
+        slippage_bps: int = 0,
+    ) -> list[WaterfallDataPoint]:
+        """
+        Generate waterfall chart data showing cost breakdown from gross to net yield.
+        
+        Shows how each cost component chips away at the gross 30-day yield.
+        """
+        # Calculate 30-day gross yield
+        gross_yield_30d = capital * (target_apy / 100) / 365 * 30
+        
+        # Slippage estimate (from bridge quote)
+        slippage_cost = capital * (slippage_bps / 10000) if slippage_bps else 0
+        
+        # Build waterfall bars with running cumulative total
+        waterfall = []
+        cumulative = gross_yield_30d
+        
+        # Gross Yield (starting point)
+        waterfall.append(WaterfallDataPoint(
+            label="Gross Yield (30D)",
+            value=round(gross_yield_30d, 2),
+            cumulative=round(cumulative, 2),
+            is_positive=True
+        ))
+        
+        # Entry Gas
+        entry_gas = round_trip.entry_source_gas + round_trip.entry_dest_gas
+        cumulative -= entry_gas
+        waterfall.append(WaterfallDataPoint(
+            label="Entry Gas",
+            value=round(-entry_gas, 2),
+            cumulative=round(cumulative, 2),
+            is_positive=False
+        ))
+        
+        # Bridge Fee (Entry)
+        cumulative -= round_trip.entry_bridge_fee
+        waterfall.append(WaterfallDataPoint(
+            label="Bridge Fee",
+            value=round(-round_trip.entry_bridge_fee, 2),
+            cumulative=round(cumulative, 2),
+            is_positive=False
+        ))
+        
+        # Slippage (if significant)
+        if slippage_cost > 0.01:
+            cumulative -= slippage_cost
+            waterfall.append(WaterfallDataPoint(
+                label="Slippage",
+                value=round(-slippage_cost, 2),
+                cumulative=round(cumulative, 2),
+                is_positive=False
+            ))
+        
+        # Exit Gas
+        exit_gas = round_trip.exit_source_gas + round_trip.exit_dest_gas
+        cumulative -= exit_gas
+        waterfall.append(WaterfallDataPoint(
+            label="Exit Gas",
+            value=round(-exit_gas, 2),
+            cumulative=round(cumulative, 2),
+            is_positive=False
+        ))
+        
+        # Exit Bridge Fee
+        cumulative -= round_trip.exit_bridge_fee
+        waterfall.append(WaterfallDataPoint(
+            label="Exit Bridge",
+            value=round(-round_trip.exit_bridge_fee, 2),
+            cumulative=round(cumulative, 2),
+            is_positive=False
+        ))
+        
+        # Net Yield (final bar - show as positive if in profit)
+        waterfall.append(WaterfallDataPoint(
+            label="Net Yield",
+            value=round(cumulative, 2),
+            cumulative=round(cumulative, 2),
+            is_positive=cumulative > 0
+        ))
+        
+        return waterfall
+
     def _build_route_calculation(
         self,
         request: AnalyzeRequest,
@@ -310,6 +399,12 @@ class AggregatorService:
                     total=round_trip.exit_total
                 ),
                 round_trip_total=round_trip.total_round_trip
+            ),
+            waterfall_data=self._generate_waterfall_data(
+                capital=request.capital,
+                target_apy=request.pool_apy,
+                round_trip=round_trip,
+                slippage_bps=entry_quote.selected_quote.slippage_bps
             ),
             risk_warnings=[],
             tvl_source="live"

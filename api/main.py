@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 
 # Performance Optimizations
 import uvloop
-from fastapi.responses import ORJSONResponse
+from fastapi.responses import ORJSONResponse, JSONResponse
 from fastapi.middleware.gzip import GZipMiddleware
 
 from fastapi import FastAPI, HTTPException, Request, APIRouter
@@ -23,7 +23,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-from .models import AnalyzeRequest, RouteCalculation, YieldResponse, Chain
+from .models import AnalyzeRequest, RouteCalculation, YieldResponse, Chain, PreflightRequest, RiskCheckResponse
 from .services import get_service, cleanup_service
 from .exceptions import ExternalAPIError, InsufficientLiquidityError, BridgeRouteError
 from .resilience import get_circuit_states
@@ -170,6 +170,34 @@ async def analyze_route(request: Request, body: AnalyzeRequest):
         logger.error(f"Analysis failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Analysis failed")
 
+
+@app.post("/preflight", response_model=list[RiskCheckResponse])
+@limiter.limit("60/minute")
+async def preflight_checks(request: Request, body: PreflightRequest):
+    """Run pre-flight safety checks before migration."""
+    import httpx
+    from .sentinel_service import SentinelService
+    
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        sentinel = SentinelService(client)
+        try:
+            checks = await sentinel.run_preflight_checks(
+                migration_amount=body.capital,
+                target_pool_tvl=body.pool_tvl,
+                target_chain=body.target_chain,
+                protocol_name=body.project,
+                risk_score=body.risk_score,
+            )
+            return [RiskCheckResponse(
+                name=c.name,
+                status=c.status,
+                message=c.message,
+                severity=c.severity
+            ) for c in checks]
+        except Exception as e:
+            logger.error(f"Pre-flight checks failed: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail="Pre-flight checks failed")
+
 @app.get("/yield/{chain}", response_model=YieldResponse)
 @limiter.limit("30/minute")
 async def get_current_yield(request: Request, chain: str):
@@ -194,6 +222,49 @@ async def get_native_token_price(request: Request, chain: str):
         price = await service.get_native_token_price(chain_enum)
         return {"chain": chain, "price_usd": price}
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/pool/{pool_id}/history")
+@limiter.limit("30/minute")
+async def get_pool_history(request: Request, pool_id: str, days: int = 30):
+    """
+    Get historical APY data and stability metrics for a pool.
+    
+    Args:
+        pool_id: DefiLlama pool identifier
+        days: Number of days to look back (default 30)
+    """
+    from datetime import datetime, timedelta
+    
+    service = get_service()
+    try:
+        # Fetch full history
+        history = await service.yield_service.fetch_pool_history(pool_id)
+        
+        # Filter to requested timeframe
+        if history:
+            cutoff_timestamp = (datetime.now() - timedelta(days=days)).timestamp()
+            recent_history = [
+                p for p in history 
+                if p.get("timestamp", 0) > cutoff_timestamp
+            ]
+        else:
+            recent_history = []
+        
+        # Calculate statistics and histogram
+        statistics = service.yield_service.calculate_yield_statistics(recent_history)
+        histogram = service.yield_service.generate_histogram_bins(recent_history)
+        
+        return {
+            "pool_id": pool_id,
+            "days": days,
+            "data_points": len(recent_history),
+            "statistics": statistics,
+            "histogram": histogram,
+        }
+    except Exception as e:
+        logger.error(f"Failed to get pool history: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

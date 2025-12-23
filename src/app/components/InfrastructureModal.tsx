@@ -193,7 +193,7 @@ const InfrastructureModal: React.FC<InfrastructureModalProps> = ({ selectedRoute
 
                                     {/* X-Axis Labels (Capital) */}
                                     <div className="flex justify-between pl-12 pb-4 text-[10px] font-mono opacity-60">
-                                        <span>CAPITAL ALLOCATION</span>
+                                        <span>CAPITAL / TIME</span>
                                         {capitalLevels.slice(1, 2).map(c => <span key={c.label} className="mr-8">{c.label}</span>)}
                                     </div>
 
@@ -201,7 +201,7 @@ const InfrastructureModal: React.FC<InfrastructureModalProps> = ({ selectedRoute
                                     <div className="pl-8 space-y-4">
                                         {timeframes.map((time, i) => (
                                             <div key={time.label} className="flex items-center gap-4">
-                                                <span className="w-8 text-xs font-mono opacity-60">${selectedRoute.totalCost.toFixed(0)}</span>
+                                                <span className="w-8 text-xs font-mono opacity-60">{time.days}d</span>
 
                                                 <div className={cn(
                                                     "flex-1 py-3 px-6 rounded text-center font-bold font-mono text-sm border-2 border-sumi-black shadow-[4px_4px_0px_rgba(0,0,0,0.5)] transition-all cursor-pointer",
