@@ -1,6 +1,6 @@
 import { Minus, Plus, TrendingUp, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { VScoreResult } from '@/lib/utils/vScore';
+import { VScoreFactors } from '@/lib/utils/vScore';
 
 interface StrategySummaryProps {
     nodes: any[];
@@ -17,13 +17,13 @@ export function StrategySummary({ nodes }: StrategySummaryProps) {
 
     // Aggregate V-Score Logic
     // In a real app, we might weigh this by capital allocation. For now, we take the lowest score (weakest link principle).
-    const scores: VScoreResult[] = nodes
+    const scores: VScoreFactors[] = nodes
         .filter(n => n.data.simulationData?.vScore)
         .map(n => n.data.simulationData.vScore);
 
     const lowestScore = scores.length > 0
         ? scores.reduce((prev, curr) => prev.total < curr.total ? prev : curr)
-        : { total: 10, breakdown: { base: 10, tvlFactor: 0, auditFactor: 0, timeFactor: 0, exploitPenalty: 0 } };
+        : { total: 10, tvlFactor: 0, auditFactor: 0, timeFactor: 0, exploitPenalty: 0 };
 
     const isProfitable = avgApy > 0;
 
@@ -77,30 +77,31 @@ export function StrategySummary({ nodes }: StrategySummaryProps) {
                 <div className="space-y-2 pt-2 border-t border-dashed border-sumi-black/20 font-mono text-xs">
                     <div className="flex justify-between text-sumi-black/60">
                         <span>Base:</span>
-                        <span>{lowestScore.breakdown.base.toFixed(1)}</span>
+                        <span>10.0</span>
                     </div>
-                    {lowestScore.breakdown.tvlFactor !== 0 && (
+                    {lowestScore.tvlFactor !== 0 && (
                         <div className="flex justify-between text-intl-orange">
                             <span>TVL Depth:</span>
-                            <span>{lowestScore.breakdown.tvlFactor.toFixed(1)}</span>
+                            <span>{lowestScore.tvlFactor.toFixed(1)}</span>
                         </div>
                     )}
-                    {lowestScore.breakdown.auditFactor !== 0 && (
+                    {lowestScore.auditFactor !== 0 && (
                         <div className="flex justify-between text-intl-orange">
                             <span>Audit Risk:</span>
-                            <span>{lowestScore.breakdown.auditFactor.toFixed(1)}</span>
+                            <span>{lowestScore.auditFactor.toFixed(1)}</span>
                         </div>
                     )}
-                    {lowestScore.breakdown.timeFactor !== 0 && (
+                    {lowestScore.timeFactor !== 0 && (
                         <div className="flex justify-between text-sumi-black/60">
                             <span>Time Bonus:</span>
-                            <span>{lowestScore.breakdown.timeFactor > 0 ? '+' : ''}{lowestScore.breakdown.timeFactor.toFixed(1)}</span>
+                            <span>{lowestScore.timeFactor > 0 ? '+' : ''}{lowestScore.timeFactor.toFixed(1)}</span>
                         </div>
                     )}
-                    {lowestScore.breakdown.exploitPenalty !== 0 && (
+                    {/* Access properties directly from lowestScore, NOT lowestScore.breakdown */}
+                    {lowestScore.exploitPenalty !== 0 && (
                         <div className="flex justify-between text-red-600 font-bold">
                             <span>Past Exploits:</span>
-                            <span>{lowestScore.breakdown.exploitPenalty.toFixed(1)}</span>
+                            <span>{lowestScore.exploitPenalty.toFixed(1)}</span>
                         </div>
                     )}
                 </div>
