@@ -199,12 +199,23 @@ function BreakevenChart({
               tickFormatter={formatYAxis}
               domain={[yMin - yPadding, yMax + yPadding]}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--accent)', strokeWidth: 1 }} />
+            <Tooltip
+              content={<CustomTooltip />}
+              cursor={{ stroke: 'var(--accent)', strokeWidth: 1, strokeDasharray: '4 4' }}
+            />
 
-            <ReferenceLine y={0} stroke="var(--divider)" strokeWidth={1.5} />
+            {/* Zero Line (Breakeven Profit) */}
+            <ReferenceLine y={0} stroke="var(--matchbox-green)" strokeWidth={2} strokeDasharray="3 3" />
 
+            {/* Breakeven Time Line */}
             {hasBreakeven && breakevenDay && (
-              <ReferenceLine x={breakevenDay} stroke="var(--accent)" strokeWidth={1} strokeDasharray="4 4" label="BE" />
+              <ReferenceLine
+                x={breakevenDay}
+                stroke="var(--matchbox-green)"
+                strokeWidth={2}
+                strokeDasharray="3 3"
+                label={{ value: 'BREAKEVEN', position: 'top', fill: 'var(--matchbox-green)', fontSize: 10, fontWeight: 'bold' }}
+              />
             )}
 
             <Area

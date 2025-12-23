@@ -30,9 +30,9 @@ const InfrastructureModal: React.FC<InfrastructureModalProps> = ({ selectedRoute
         { label: '$50000', val: 50000 }
     ];
     const timeframes = [
-        { label: '7d', days: 7 },
-        { label: '30d', days: 30 },
-        { label: '90d', days: 90 }
+        { label: '7 Days', days: 7 },
+        { label: '30 Days', days: 30 },
+        { label: '90 Days', days: 90 }
     ];
 
     return (
@@ -193,7 +193,7 @@ const InfrastructureModal: React.FC<InfrastructureModalProps> = ({ selectedRoute
 
                                     {/* X-Axis Labels (Capital) */}
                                     <div className="flex justify-between pl-12 pb-4 text-[10px] font-mono opacity-60">
-                                        <span>CAPITAL / TIME</span>
+                                        <span>CAPITAL ALLOCATION</span>
                                         {capitalLevels.slice(1, 2).map(c => <span key={c.label} className="mr-8">{c.label}</span>)}
                                     </div>
 
