@@ -207,6 +207,20 @@ function calculateVScore(pool: BackendPoolResponse, metadata?: BackendBridgeMeta
 function transformRouteResponse(data: BackendRouteResponse): RouteCalculation {
   const vScore = calculateVScore(data.target_pool, data.bridge_metadata || undefined);
 
+  // --- Advanced Metrics Calculation ---
+  // 1. Estimate Annual Impermanent Loss
+  let annualIL = 0;
+  if (data.target_pool.symbol.includes('USD') && data.target_pool.project.includes('Stable')) annualIL = 0; // Stable
+  else if (data.target_pool.symbol.includes('ETH') && data.target_pool.symbol.includes('BTC')) annualIL = 1.5; // Correlated
+  else annualIL = 5.7; // Volatile (Standard 2x divergence estimate)
+
+  // 2. Risk-Adjusted APY
+  const riskAdjustedApy = Math.max(0, data.target_pool.apy - annualIL);
+
+  // 3. Efficiency Score: (30d Net Profit / Total Upfront Cost) * 100
+  // Measures "Return on Cost Speed"
+  const efficiencyScore = data.total_cost > 0 ? (data.net_profit_30d / data.total_cost) * 100 : 0;
+
   return {
     targetPool: data.target_pool,
     bridgeCost: data.bridge_cost,
@@ -230,8 +244,14 @@ function transformRouteResponse(data: BackendRouteResponse): RouteCalculation {
 
     // Mocking Advanced Metrics until backend is fully updated
     safetyScore: vScore.total,
-    impermanentLossRisk: 'Low', // Defaulting for now
+    impermanentLossRisk: (data.target_pool.symbol.includes('USD') && data.target_pool.project.includes('Stable')) ? 'None' :
+      (data.target_pool.symbol.includes('ETH') && data.target_pool.symbol.includes('BTC')) ? 'Low' :
+        'Moderate',
     auditStatus: data.has_exploits ? 'Warning' : 'Verified',
+
+    // New Advanced Metrics
+    riskAdjustedApy: parseFloat(riskAdjustedApy.toFixed(2)),
+    capitalEfficiencyScore: parseFloat(efficiencyScore.toFixed(0)),
 
     vScoreBreakdown: vScore,
 

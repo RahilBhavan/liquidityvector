@@ -87,7 +87,8 @@ export function ExecutionModal({ isOpen, onClose, nodes }: ExecutionModalProps) 
         await new Promise(r => setTimeout(r, 2000)); // Simulate Chain time
 
         // 3. Confirmed
-        updateStepStatus(currentStepIndex, 'confirmed', '0x' + Math.random().toString(16).substr(2, 40));
+        const mockHash = '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+        updateStepStatus(currentStepIndex, 'confirmed', mockHash);
 
         // Move to next
         if (currentStepIndex < steps.length - 1) {

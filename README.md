@@ -7,6 +7,12 @@ Liquidity Vector is a deterministic financial execution engine designed to optim
 
 This version (v2.0 "Digital Philately") introduces a complete redesign featuring a Risograph-inspired aesthetic, improved backend performance via Redis/uvloop, and a simplified ERC-4626 vault architecture.
 
+## ✨ Key Features
+- **Portfolio Health Check**: Proactive scanning of idle wallet assets with "Opportunity Cost" calculation.
+- **Smart Risk Engine**: Risk-Adjusted APY metrics that account for Impermanent Loss and Capital Efficiency.
+- **Interactive Projections**: Real-time breakeven analysis with volatility toggles.
+- **Strategy Builder**: Drag-and-drop workflow to design custom cross-chain yield strategies.
+
 ---
 
 ## 🎨 Design System: "Digital Philately"

@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useOpportunityCost } from '@/hooks/useOpportunityCost';
+import { HealthScoreCard } from '@/app/components/HealthScoreCard';
 import { Pool, UserSettings, RouteCalculation, Chain } from '@/types';
 import { apiService } from '@/lib/services/apiService';
 import RouteCard from './RouteCard';
@@ -181,24 +183,13 @@ export default function Dashboard({ settings, setFetching, walletAddress }: Dash
               </div>
               <div className="space-y-4">
                 <h3 className="text-sm font-bold uppercase tracking-widest text-sumi-black/40">Efficiency</h3>
-                <div className="h-full neo-card p-6 flex flex-col justify-between bg-white">
-                  <div>
-                    <div className="text-xs uppercase font-bold text-sumi-black/60 mb-1">V-Score Safety</div>
-                    <div className={cn("text-5xl font-bold tracking-tighter", getVScoreColor(bestRoute.safetyScore || 9))}>
-                      {(bestRoute.safetyScore || 9.2).toFixed(1)}
-                    </div>
-                  </div>
-                  <div className="space-y-3 pt-6 border-t-2 border-sumi-black/5">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-bold text-sumi-black/60">30d Net Profit</span>
-                      <span className="font-mono font-bold text-matchbox-green">+${bestRoute.netProfit30d.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="font-bold text-sumi-black/60">Payback Time</span>
-                      <span className="font-mono font-bold">{bestRoute.breakevenHours.toFixed(1)}h</span>
-                    </div>
-                  </div>
-                </div>
+                {/* 1. Health Score Card (NEW) */}
+                <HealthScoreCard
+                  healthScore={portfolioHealth.healthScore}
+                  totalMissedYearly={portfolioHealth.totalMissedYearly}
+                  opportunities={portfolioHealth.opportunities}
+                  isLoading={isLoadingPortfolio || portfolioHealth.isLoading}
+                />
               </div>
             </div>
 
@@ -270,12 +261,12 @@ export default function Dashboard({ settings, setFetching, walletAddress }: Dash
                       <div className="mb-4">
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded bg-sumi-black/5 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded bg-sumi-black/5 flex items-center justify-center border-2 border-sumi-black">
                               <Landmark className="w-4 h-4" />
                             </div>
                             <div>
-                              <h4 className="font-bold text-base leading-none">{r.targetPool.project}</h4>
-                              <div className="text-[10px] font-mono text-sumi-black/60 uppercase">{r.targetPool.chain}</div>
+                              <h4 className="font-bold text-lg uppercase tracking-tight leading-none">{r.targetPool.project}</h4>
+                              <div className="text-[10px] font-mono font-bold text-sumi-black/60 uppercase tracking-widest">{r.targetPool.chain}</div>
                             </div>
                           </div>
                           <button

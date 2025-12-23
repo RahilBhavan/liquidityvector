@@ -103,7 +103,10 @@ export interface RouteCalculation {
 
   // Execution Plan
   steps: string[];
-}
+
+  // NEW: Advanced Data Metrics
+  riskAdjustedApy: number; // APY minus estimated annual IL
+  capitalEfficiencyScore: number; // (30d Yield / Upfront Cost) * 100
 
 export interface UserSettings {
   capital: number;

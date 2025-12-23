@@ -23,7 +23,7 @@ import ActionNode from '@/features/builder/components/ActionNode';
 import { StrategySummary } from '@/features/builder/components/StrategySummary';
 import { StrategyManagerModal, SavedStrategy } from '@/features/builder/components/StrategyManagerModal';
 import { ExecutionModal } from '@/features/builder/components/ExecutionModal';
-import { calculateVScore } from '@/lib/utils/vScore';
+import { calculateVScore, estimateNodeMetrics } from '@/lib/utils/vScore';
 import { ArrowLeft, Play, Save, FolderOpen, Rocket } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -114,46 +114,35 @@ function BuilderArea() {
     const simulateStrategy = useCallback(() => {
         setNodes((nds) => nds.map((node) => {
             let mockData: any = {};
-
-            // Logic to derive realistic inputs for V-Score
-            // In a real app, this would come from the backend or an on-chain call
             const label = (node.data.label as string) || '';
+            const type = node.data.type as string;
+
+            // 1. Get Base Metrics (Gas, Time, APY) from Estimator
+            const metrics = estimateNodeMetrics(type, label);
+
+            // 2. Calculate V-Score for Pools & Bridges
+            // Logic to derive realistic inputs for V-Score
             const isHighTvl = label.toLowerCase().includes('aave') || label.toLowerCase().includes('aerodrome') || label.toLowerCase().includes('uniswap');
             const isRisky = label.toLowerCase().includes('degen') || label.toLowerCase().includes('meme');
-
             const estimatedTvl = isHighTvl ? 150_000_000 : isRisky ? 500_000 : 5_000_000;
-            const bridgeAge = node.data.type === 'bridge' ? (label.includes('Stargate') ? 4 : 1) : 0;
+            const bridgeAge = type === 'bridge' ? (label.includes('Stargate') ? 4 : 1) : 0;
 
-            if (node.data.type === 'pool') {
+            if (type === 'pool') {
                 const vScore = calculateVScore({
                     tvlUsd: estimatedTvl,
                     auditStatus: isRisky ? 'Warning' : 'Verified'
                 });
-
-                mockData = {
-                    apy: (Math.random() * 8 + 4).toFixed(2),
-                    poolDepth: isHighTvl ? '$150M+' : isRisky ? '$500k' : '$5M',
-                    vScore: vScore
-                };
-            } else if (node.data.type === 'bridge') {
+                mockData = { ...metrics, vScore };
+            } else if (type === 'bridge') {
                 const vScore = calculateVScore({
                     tvlUsd: estimatedTvl,
                     bridgeMetadata: { ageYears: bridgeAge, hasExploits: false }
                 });
-
-                mockData = {
-                    gas: (Math.random() * 3 + 1).toFixed(2),
-                    time: Math.floor(Math.random() * 15 + 5),
-                    bridgeFee: (Math.random() * 1 + 0.5).toFixed(2),
-                    slippage: (Math.random() * 0.1).toFixed(2),
-                    vScore: vScore
-                };
-            } else if (node.data.type === 'swap') {
-                mockData = {
-                    gas: (Math.random() * 0.5 + 0.1).toFixed(2),
-                    slippage: (Math.random() * 0.2).toFixed(2),
-                };
+                mockData = { ...metrics, vScore };
+            } else {
+                mockData = metrics;
             }
+
             return {
                 ...node,
                 data: {

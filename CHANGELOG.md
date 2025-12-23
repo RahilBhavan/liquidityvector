@@ -1,5 +1,21 @@
 # Version History
 
+## [1.3.0] - 2025-12-22
+
+### Portfolio Intelligence
+- **Health Check System**: Implemented `useOpportunityCost` hook to detect idle wallet assets and calculate potential yield loss.
+- **Visual Health Card**: Added "Capital Efficiency" status card to the Dashboard, alerting users to missed opportunities.
+- **Real Asset Scanning**: Replaced mock data with `wagmi` integration to scan real user balances for top assets (USDC, DAI, WETH).
+
+### Advanced Risk Engine
+- **Risk-Adjusted APY**: Implemented heuristics to discount headline APY by estimated Impermanent Loss risk (e.g. 5.7% drag for volatile pairs).
+- **Capital Efficiency Score**: New metric tracking `Return on Cost` to highlight low-fee/high-efficiency L2 routes.
+- **Interactive Breakeven**: Added toggles to the Projections chart to visualize "IL Risk" scenarios against the baseline profit curve.
+
+### UI/UX Refinements
+- **Typography Overhaul**: Standardized all headers and labels to the Neo-Brutalist system (`Space Mono` for data, `Helvetica` for headers).
+- **Specialized Cards**: Redesigned Dashboard stats into purpose-built cards (Market Pulse, Portfolio Health).
+
 ## [1.2.1] - 2025-12-21
 
 ### Infrastructure & Deployment
