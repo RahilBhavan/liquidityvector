@@ -246,7 +246,7 @@ function transformRouteResponse(data: BackendRouteResponse): RouteCalculation {
     safetyScore: vScore.total,
     impermanentLossRisk: (data.target_pool.symbol.includes('USD') && data.target_pool.project.includes('Stable')) ? 'None' :
       (data.target_pool.symbol.includes('ETH') && data.target_pool.symbol.includes('BTC')) ? 'Low' :
-        'Moderate',
+        'Medium',
     auditStatus: data.has_exploits ? 'Warning' : 'Verified',
 
     // New Advanced Metrics
