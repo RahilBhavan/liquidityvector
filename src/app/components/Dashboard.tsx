@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { usePortfolio } from '@/hooks/usePortfolio';
 import { useOpportunityCost } from '@/hooks/useOpportunityCost';
 import { HealthScoreCard } from '@/app/components/HealthScoreCard';
 import { Pool, UserSettings, RouteCalculation, Chain } from '@/types';
@@ -29,6 +30,16 @@ export default function Dashboard({ settings, setFetching, walletAddress }: Dash
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRoute, setSelectedRoute] = useState<RouteCalculation | null>(null);
   const ITEMS_PER_PAGE = 6; // Grid 2x3
+
+  // --- Portfolio Hooks ---
+  // 1. Fetch assets from wallet
+  const {
+    assets,
+    isLoading: isLoadingPortfolio,
+  } = usePortfolio(walletAddress || '0x0000000000000000000000000000000000000000'); // Safe fallback
+
+  // 2. Calculate Opportunity Cost (Health Check)
+  const portfolioHealth = useOpportunityCost(assets);
 
   const calculateStrategies = useCallback(async () => {
     setLoading(true);
