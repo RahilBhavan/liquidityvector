@@ -53,9 +53,14 @@ export function Sidebar({ settings, setSettings, isFetching }: SidebarProps) {
                         <div className="relative bg-white border-2 border-sumi-black p-1 flex items-center transition-transform group-focus-within:-translate-y-0.5 group-focus-within:-translate-x-0.5 rounded-[var(--radius)]">
                             <span className="pl-3 font-mono text-lg text-sumi-black">$</span>
                             <input
-                                type="number"
-                                value={settings.capital}
-                                onChange={(e) => handleChange('capital', Number(e.target.value))}
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                value={settings.capital === 0 ? '' : settings.capital.toString()}
+                                onChange={(e) => {
+                                    const val = e.target.value.replace(/[^0-9]/g, '');
+                                    handleChange('capital', val === '' ? 0 : parseInt(val, 10));
+                                }}
                                 className="w-full bg-transparent p-2 font-mono text-xl font-bold text-sumi-black outline-none placeholder:text-sumi-black/20"
                                 placeholder="0"
                             />

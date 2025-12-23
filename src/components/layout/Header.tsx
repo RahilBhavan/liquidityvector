@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { useAutoCapital } from '@/hooks/useAutoCapital';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Wallet } from 'lucide-react';
@@ -13,11 +14,18 @@ interface HeaderProps {
 }
 
 export function Header({ walletBalance, canPopulate, onPopulateCapital }: HeaderProps) {
+    const [sessionId, setSessionId] = useState('------');
+
+    // Generate session ID only on client to avoid hydration mismatch
+    useEffect(() => {
+        setSessionId(Math.random().toString(36).substring(7).toUpperCase());
+    }, []);
+
     return (
         <header className="w-full border-b-2 border-sumi-black bg-paper-white px-6 py-4 flex items-center justify-between z-10 relative">
             <div>
                 <h2 className="font-mono text-xs font-bold uppercase tracking-widest text-sumi-black/60 mb-1">
-                    [ CURRENT_SESSION_ID: {Math.random().toString(36).substring(7).toUpperCase()} ]
+                    [ CURRENT_SESSION_ID: {sessionId} ]
                 </h2>
                 <div className="font-sans font-bold text-lg text-sumi-black">
                     Cross-Chain Yield Aggregator
