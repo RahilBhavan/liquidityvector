@@ -36,7 +36,7 @@ export default function Dashboard({ settings, setFetching, walletAddress }: Dash
   const {
     assets,
     isLoading: isLoadingPortfolio,
-  } = usePortfolio(walletAddress || '0x0000000000000000000000000000000000000000'); // Safe fallback
+  } = usePortfolio();
 
   // 2. Calculate Opportunity Cost (Health Check)
   const portfolioHealth = useOpportunityCost(assets);
