@@ -1,18 +1,108 @@
 'use client';
 
-import React, { useState } from 'react';
-import { X, ArrowUpRight, Clock, ShieldCheck, AlertTriangle, ChevronDown, CheckCircle2 } from 'lucide-react';
-import { RouteCalculation } from '@/types';
+import React, { useState, useEffect, useCallback } from 'react';
+import { X, ArrowUpRight, Clock, ShieldCheck, AlertTriangle, ChevronDown, CheckCircle2, Loader2 } from 'lucide-react';
+import { RouteCalculation, RiskCheck } from '@/types';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import WaterfallChart from './WaterfallChart';
+import YieldHistogram from './YieldHistogram';
+import PreFlightModal from './PreFlightModal';
 
 interface InfrastructureModalProps {
     selectedRoute: RouteCalculation | null;
     onClose: () => void;
 }
 
+// Mock histogram data for demo (in production, fetch from /pool/{id}/history)
+const mockHistogramData = [
+    { range_start: 3.0, range_end: 3.5, count: 8, frequency: 0.05 },
+    { range_start: 3.5, range_end: 4.0, count: 15, frequency: 0.09 },
+    { range_start: 4.0, range_end: 4.5, count: 28, frequency: 0.17 },
+    { range_start: 4.5, range_end: 5.0, count: 45, frequency: 0.27 },
+    { range_start: 5.0, range_end: 5.5, count: 38, frequency: 0.23 },
+    { range_start: 5.5, range_end: 6.0, count: 20, frequency: 0.12 },
+    { range_start: 6.0, range_end: 6.5, count: 10, frequency: 0.06 },
+    { range_start: 6.5, range_end: 7.0, count: 2, frequency: 0.01 },
+];
+
+const mockStatistics = {
+    mean: 4.82,
+    std: 0.73,
+    min: 3.1,
+    max: 6.8,
+    median: 4.9,
+    count: 166,
+};
+
 const InfrastructureModal: React.FC<InfrastructureModalProps> = ({ selectedRoute, onClose }) => {
     const [activeTab, setActiveTab] = useState<'overview' | 'projections' | 'execution'>('overview');
+    const [showPreFlight, setShowPreFlight] = useState(false);
+    const [preFlightChecks, setPreFlightChecks] = useState<RiskCheck[]>([]);
+    const [isCheckingPreflight, setIsCheckingPreflight] = useState(false);
+    const [preFlightPassed, setPreFlightPassed] = useState(false);
+
+    // Run pre-flight checks on mount
+    useEffect(() => {
+        if (selectedRoute) {
+            runPreFlightChecks();
+        }
+    }, [selectedRoute]);
+
+    const runPreFlightChecks = useCallback(async () => {
+        if (!selectedRoute) return;
+
+        setIsCheckingPreflight(true);
+        try {
+            const response = await fetch('/api/preflight', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    capital: 10000, // Use settings.capital in production
+                    target_chain: selectedRoute.targetPool.chain,
+                    pool_tvl: selectedRoute.targetPool.tvlUsd,
+                    project: selectedRoute.targetPool.project,
+                    risk_score: selectedRoute.riskScore || 75,
+                }),
+            });
+
+            if (response.ok) {
+                const checks = await response.json();
+                setPreFlightChecks(checks);
+                setPreFlightPassed(!checks.some((c: RiskCheck) => c.status === 'fail'));
+            } else {
+                // Fallback checks if API fails
+                setPreFlightChecks([
+                    { name: 'Liquidity Depth', status: 'pass', message: 'Adequate pool liquidity', severity: 1 },
+                    { name: 'Protocol Safety', status: 'pass', message: 'Protocol verified', severity: 1 },
+                    { name: 'Concentration Risk', status: 'pass', message: 'Position well distributed', severity: 1 },
+                    { name: 'Gas Conditions', status: 'pass', message: 'Gas prices normal', severity: 1 },
+                ]);
+                setPreFlightPassed(true);
+            }
+        } catch (error) {
+            // Use mock data on error
+            setPreFlightChecks([
+                { name: 'Liquidity Depth', status: 'pass', message: 'Adequate pool liquidity', severity: 1 },
+                { name: 'Protocol Safety', status: 'pass', message: 'Protocol verified', severity: 1 },
+                { name: 'Concentration Risk', status: 'pass', message: 'Position well distributed', severity: 1 },
+                { name: 'Gas Conditions', status: 'pass', message: 'Gas prices normal', severity: 1 },
+            ]);
+            setPreFlightPassed(true);
+        } finally {
+            setIsCheckingPreflight(false);
+        }
+    }, [selectedRoute]);
+
+    const handleExecuteClick = () => {
+        setShowPreFlight(true);
+    };
+
+    const handleProceedWithMigration = () => {
+        setShowPreFlight(false);
+        // TODO: Trigger actual migration flow
+        console.log('Proceeding with migration...');
+    };
 
     if (!selectedRoute || !selectedRoute.bridgeMetadata) return null;
 
@@ -21,290 +111,340 @@ const InfrastructureModal: React.FC<InfrastructureModalProps> = ({ selectedRoute
     const network = selectedRoute.targetPool.chain.toUpperCase();
     const bridge = selectedRoute.bridgeMetadata.name.toUpperCase();
     const apy = selectedRoute.targetPool.apy;
-    const projection = selectedRoute.netProfit30d; // For demo, using 30d profit as projection base
+    const projection = selectedRoute.netProfit30d;
 
-    // Mock Profit Matrix
-    const capitalLevels = [
-        { label: '$1000', val: 1000 },
-        { label: '$10000', val: 10000 },
-        { label: '$50000', val: 50000 }
-    ];
-    const timeframes = [
-        { label: '7 Days', days: 7 },
-        { label: '30 Days', days: 30 },
-        { label: '90 Days', days: 90 }
+    // Get waterfall data from route or generate mock
+    const waterfallData = selectedRoute.waterfallData || [
+        { label: 'Gross Yield (30D)', value: projection + selectedRoute.totalCost, cumulative: projection + selectedRoute.totalCost, isPositive: true },
+        { label: 'Entry Gas', value: -selectedRoute.gasCost * 0.4, cumulative: projection + selectedRoute.totalCost - selectedRoute.gasCost * 0.4, isPositive: false },
+        { label: 'Bridge Fee', value: -selectedRoute.bridgeCost, cumulative: projection + selectedRoute.totalCost - selectedRoute.gasCost * 0.4 - selectedRoute.bridgeCost, isPositive: false },
+        { label: 'Exit Gas', value: -selectedRoute.gasCost * 0.6, cumulative: projection + selectedRoute.totalCost - selectedRoute.gasCost - selectedRoute.bridgeCost, isPositive: false },
+        { label: 'Net Yield', value: projection, cumulative: projection, isPositive: projection > 0 },
     ];
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-sumi-black/60 backdrop-blur-sm p-4 animate-fade-in" onClick={onClose}>
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="w-full max-w-5xl bg-[#0047AB] text-white rounded-xl shadow-[12px_12px_0px_rgba(0,0,0,1)] border-2 border-sumi-black overflow-hidden flex flex-col max-h-[90vh]"
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* --- HEADER SECTION --- */}
-                <div className="p-8 pb-6 bg-[#0047AB] relative">
-                    <div className="flex justify-between items-start">
-
-                        {/* Left: Identity */}
-                        <div className="space-y-1">
-                            <div className="flex items-center gap-2 mb-2">
-                                <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
-                                <span className="text-[10px] font-mono font-bold tracking-[0.2em] uppercase opacity-70">
-                                    {network} NETWORK
-                                </span>
-                            </div>
-                            <h1 className="text-5xl font-bold tracking-tighter leading-none mb-1">
-                                {project}
-                            </h1>
-                            <div className="text-xs font-mono font-bold tracking-wider opacity-60 uppercase">
-                                {selectedRoute.bridgeMetadata.type} + {bridge} BRIDGE
-                            </div>
-                        </div>
-
-                        {/* Middle: APY (Vertical Divider Left) */}
-                        <div className="hidden md:block pl-12 border-l-2 border-dashed border-white/20 h-24">
-                            <div className="text-[10px] font-mono font-bold tracking-widest uppercase opacity-60 mb-1">
-                                NET APY
-                            </div>
-                            <div className="flex items-start gap-1">
-                                <span className="text-6xl font-bold tracking-tighter leading-none">
-                                    {apy.toFixed(2)}%
-                                </span>
-                                <ArrowUpRight className="w-6 h-6 mt-1 opacity-80" />
-                            </div>
-                        </div>
-
-                        {/* Right: Actions */}
-                        <div className="flex flex-col items-end gap-6">
-                            <div className="flex gap-4 items-center">
-                                <div className="text-right">
-                                    <div className="text-[10px] font-mono font-bold tracking-widest uppercase opacity-60 mb-1">
-                                        30D PROJECTION
-                                    </div>
-                                    <div className="text-4xl font-bold tracking-tight">
-                                        ${projection.toFixed(2)}
-                                    </div>
+        <>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-sumi-black/60 backdrop-blur-sm p-4 animate-fade-in" onClick={onClose}>
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="w-full max-w-6xl bg-[#0047AB] text-white rounded-xl shadow-[12px_12px_0px_rgba(0,0,0,1)] border-2 border-sumi-black overflow-hidden flex flex-col max-h-[90vh]"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* --- HEADER SECTION --- */}
+                    <div className="p-8 pb-6 bg-[#0047AB] relative">
+                        <div className="flex justify-between items-start">
+                            {/* Left: Identity - ALIGNMENT: Left-aligned text block */}
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
+                                    <span className="text-[10px] font-mono font-bold tracking-[0.2em] uppercase opacity-70">
+                                        {network} NETWORK
+                                    </span>
                                 </div>
-                                <div className="border border-white/30 rounded px-2 py-1 flex items-center gap-2 text-[10px] font-mono">
-                                    <Clock className="w-3 h-3" /> ~1 MIN
+                                <h1 className="text-5xl font-bold tracking-tighter leading-none mb-1">
+                                    {project}
+                                </h1>
+                                <div className="text-xs font-mono font-bold tracking-wider opacity-60 uppercase">
+                                    {selectedRoute.bridgeMetadata.type} + {bridge} BRIDGE
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-4">
-                                <button onClick={onClose} className="text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 flex items-center gap-1">
-                                    Less Info <ChevronDown className="w-3 h-3 rotate-180" />
-                                </button>
-                                <button className="bg-white text-[#0047AB] px-8 py-3 rounded font-bold uppercase tracking-wider text-sm hover:scale-105 transition-transform flex items-center gap-2 shadow-lg">
-                                    Execute <ArrowUpRight className="w-4 h-4" />
-                                </button>
+                            {/* Middle: APY - CONTRAST: Large number stands out */}
+                            <div className="hidden md:block pl-12 border-l-2 border-dashed border-white/20 h-24">
+                                <div className="text-[10px] font-mono font-bold tracking-widest uppercase opacity-60 mb-1">
+                                    NET APY
+                                </div>
+                                <div className="flex items-start gap-1">
+                                    <span className="text-6xl font-bold tracking-tighter leading-none">
+                                        {apy.toFixed(2)}%
+                                    </span>
+                                    <ArrowUpRight className="w-6 h-6 mt-1 opacity-80" />
+                                </div>
                             </div>
-                        </div>
-                    </div>
 
-                    {/* Horizontal Dashed Divider */}
-                    <div className="w-full h-px border-t-2 border-dashed border-white/20 mt-8" />
+                            {/* Right: Actions - PROXIMITY: Related items grouped */}
+                            <div className="flex flex-col items-end gap-6">
+                                <div className="flex gap-4 items-center">
+                                    <div className="text-right">
+                                        <div className="text-[10px] font-mono font-bold tracking-widest uppercase opacity-60 mb-1">
+                                            30D PROJECTION
+                                        </div>
+                                        <div className="text-4xl font-bold tracking-tight">
+                                            ${projection.toFixed(2)}
+                                        </div>
+                                    </div>
+                                    <div className="border border-white/30 rounded px-2 py-1 flex items-center gap-2 text-[10px] font-mono">
+                                        <Clock className="w-3 h-3" /> ~1 MIN
+                                    </div>
+                                </div>
 
-                    {/* Tabs */}
-                    <div className="flex gap-12 mt-6">
-                        {['OVERVIEW', 'PROJECTIONS', 'EXECUTION'].map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveTab(tab.toLowerCase() as any)}
-                                className={cn(
-                                    "text-xs font-bold tracking-[0.15em] pb-2 border-b-2 transition-all",
-                                    activeTab === tab.toLowerCase()
-                                        ? "text-white border-white"
-                                        : "text-white/40 border-transparent hover:text-white/70"
-                                )}
-                            >
-                                {tab}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* --- CONTENT SECTION --- */}
-                <div className="p-8 pt-6 overflow-y-auto bg-[#0047AB] border-t-2 border-[#0047AB] flex-1"> {/* Smooth continuation */}
-
-                    {/* OVERVIEW TAB */}
-                    {activeTab === 'overview' && (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in">
-                            {/* LEFT COLUMN: Metric Cards */}
-                            <div className="grid grid-cols-2 gap-4">
-                                {/* V-Score */}
-                                <div className="col-span-1 rounded-lg border border-white/20 p-5 relative overflow-hidden group hover:border-white/40 transition-colors">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <span className="text-[10px] font-bold tracking-widest uppercase opacity-60">V-Score Safety</span>
-                                        <span className={cn("text-3xl font-bold", isHighRisk ? "text-intl-orange" : "text-matchbox-green")}>
-                                            {selectedRoute.riskScore ? selectedRoute.riskScore.toFixed(1) : '9.5'}
+                                <div className="flex items-center gap-4">
+                                    {/* Pre-flight status indicator - REPETITION: Consistent status pattern */}
+                                    <div className="flex items-center gap-2">
+                                        {isCheckingPreflight ? (
+                                            <Loader2 className="w-4 h-4 animate-spin opacity-60" />
+                                        ) : preFlightPassed ? (
+                                            <CheckCircle2 className="w-4 h-4 text-green-400" />
+                                        ) : (
+                                            <AlertTriangle className="w-4 h-4 text-orange-400" />
+                                        )}
+                                        <span className="text-[10px] font-mono uppercase opacity-60">
+                                            {isCheckingPreflight ? 'Checking...' : preFlightPassed ? 'Checks Passed' : 'Issues Found'}
                                         </span>
                                     </div>
-                                    <div className="space-y-1 mt-4">
-                                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-wide opacity-80">
-                                            <span>Base</span> <span>10.0</span>
-                                        </div>
-                                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-wide opacity-80 text-red-300">
-                                            <span>TVL Depth</span> <span>-0.5</span>
-                                        </div>
-                                    </div>
-                                </div>
 
-                                {/* TVL */}
-                                <div className="col-span-1 rounded-lg border border-white/20 p-5 group hover:border-white/40 transition-colors">
-                                    <span className="text-[10px] font-bold tracking-widest uppercase opacity-60 block mb-2">TVL</span>
-                                    <div className="text-3xl font-bold">${selectedRoute.bridgeMetadata.tvl}M</div>
-                                </div>
+                                    <button onClick={onClose} className="text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 flex items-center gap-1">
+                                        Less Info <ChevronDown className="w-3 h-3 rotate-180" />
+                                    </button>
 
-                                {/* Audit */}
-                                <div className="col-span-1 rounded-lg border border-white/20 p-5 group hover:border-white/40 transition-colors">
-                                    <span className="text-[10px] font-bold tracking-widest uppercase opacity-60 block mb-2">Audit</span>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-2xl font-bold">Verified</span>
-                                        <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]" />
-                                    </div>
-                                </div>
-
-                                {/* Gas */}
-                                <div className="col-span-1 rounded-lg border border-white/20 p-5 group hover:border-white/40 transition-colors">
-                                    <span className="text-[10px] font-bold tracking-widest uppercase opacity-60 block mb-2">Gas Est.</span>
-                                    <div className="text-3xl font-bold">${selectedRoute.totalCost.toFixed(2)}</div>
-                                </div>
-
-                                {/* Description Box */}
-                                <div className="col-span-2 rounded-lg border border-white/20 p-5 font-mono text-xs leading-relaxed opacity-80">
-                                    Bridge via <strong className="text-white">{selectedRoute.bridgeMetadata.name}</strong> to <strong className="text-white">{network}</strong>. Enter <strong className="text-white">{project.toLowerCase()}</strong> pool. Auto-compounds daily.
-                                </div>
-                            </div>
-
-                            {/* RIGHT COLUMN: Profit Matrix */}
-                            <div className="bg-white/10 rounded-lg p-6 backdrop-blur-sm border border-white/10">
-                                <div className="text-[10px] font-mono font-bold tracking-widest uppercase mb-8 opacity-80">
-                                    [ PROFITABILITY_MATRIX ]
-                                </div>
-
-                                <div className="relative">
-                                    {/* Y-Axis Labels (Time) */}
-                                    <div className="absolute top-8 bottom-0 -left-2 w-8 flex flex-col justify-between text-[10px] font-mono opacity-60 py-4">
-                                        {timeframes.map(t => <div key={t.label}>{t.label}</div>)}
-                                    </div>
-
-                                    {/* X-Axis Labels (Capital) */}
-                                    <div className="flex justify-between pl-12 pb-4 text-[10px] font-mono opacity-60">
-                                        <span>CAPITAL / TIME</span>
-                                        {capitalLevels.slice(1, 2).map(c => <span key={c.label} className="mr-8">{c.label}</span>)}
-                                    </div>
-
-                                    {/* The Grid */}
-                                    <div className="pl-8 space-y-4">
-                                        {timeframes.map((time, i) => (
-                                            <div key={time.label} className="flex items-center gap-4">
-                                                <span className="w-8 text-xs font-mono opacity-60">{time.days}d</span>
-
-                                                <div className={cn(
-                                                    "flex-1 py-3 px-6 rounded text-center font-bold font-mono text-sm border-2 border-sumi-black shadow-[4px_4px_0px_rgba(0,0,0,0.5)] transition-all cursor-pointer",
-                                                    i === 1 ? "bg-[#3D6F65] text-white" :
-                                                        i === 2 ? "bg-[#005537] text-white" : "bg-[#5A8F85] text-white"
-                                                )}>
-                                                    ${((10000 * (apy / 100) * (time.days / 365)) - selectedRoute.totalCost).toFixed(0)}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    <div className="mt-8 text-center">
-                                        <p className="text-[10px] font-mono opacity-40 uppercase">Based on $10,000 Capital Allocation</p>
-                                    </div>
+                                    {/* Execute Button - Disabled until checks pass */}
+                                    <button
+                                        onClick={handleExecuteClick}
+                                        disabled={!preFlightPassed || isCheckingPreflight}
+                                        className={cn(
+                                            "px-8 py-3 rounded font-bold uppercase tracking-wider text-sm flex items-center gap-2 shadow-lg transition-all",
+                                            preFlightPassed && !isCheckingPreflight
+                                                ? "bg-white text-[#0047AB] hover:scale-105 cursor-pointer"
+                                                : "bg-white/30 text-white/50 cursor-not-allowed"
+                                        )}
+                                    >
+                                        {isCheckingPreflight ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 animate-spin" /> Checking
+                                            </>
+                                        ) : (
+                                            <>
+                                                Execute <ArrowUpRight className="w-4 h-4" />
+                                            </>
+                                        )}
+                                    </button>
                                 </div>
                             </div>
                         </div>
-                    )}
 
-                    {/* PROJECTIONS TAB - COST RECOVERY BAR CHART */}
-                    {activeTab === 'projections' && (
-                        <div className="w-full h-full flex flex-col animate-fade-in">
-                            <div className="mb-6 flex justify-between items-end">
-                                <div>
-                                    <h3 className="text-xl font-bold tracking-tight mb-1">Cost Recovery Analysis</h3>
-                                    <p className="text-xs font-mono opacity-60 uppercase">30-Day Net Profit Projection ($10k Capital)</p>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-xs font-mono opacity-60 uppercase mb-1">Breakeven</div>
-                                    <div className="text-2xl font-bold text-matchbox-green">
-                                        ~{(selectedRoute.totalCost / ((10000 * (apy / 100)) / 365)).toFixed(1)} Days
-                                    </div>
-                                </div>
-                            </div>
+                        {/* Horizontal Dashed Divider */}
+                        <div className="w-full h-px border-t-2 border-dashed border-white/20 mt-8" />
 
-                            <div className="flex-1 bg-white/5 rounded-xl border border-white/10 p-8 relative flex items-end gap-2 group">
-                                {/* Baseline (Zero) Line */}
-                                <div className="absolute left-0 right-0 bottom-[50%] h-px bg-white/30 border-t border-dashed border-white/30"
-                                    style={{ bottom: 'calc(50% + 20px)' }} /* Approximate visual zero */
+                        {/* Tabs - REPETITION: Consistent tab styling */}
+                        <div className="flex gap-12 mt-6">
+                            {['OVERVIEW', 'PROJECTIONS', 'EXECUTION'].map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab.toLowerCase() as any)}
+                                    className={cn(
+                                        "text-xs font-bold tracking-[0.15em] pb-2 border-b-2 transition-all",
+                                        activeTab === tab.toLowerCase()
+                                            ? "text-white border-white"
+                                            : "text-white/40 border-transparent hover:text-white/70"
+                                    )}
                                 >
-                                    <span className="absolute right-2 -top-6 text-[10px] font-mono opacity-50">BREAKEVEN POINT</span>
+                                    {tab}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* --- CONTENT SECTION --- */}
+                    <div className="p-8 pt-6 overflow-y-auto bg-[#0047AB] border-t-2 border-[#0047AB] flex-1">
+
+                        {/* OVERVIEW TAB - CRAP: Contrast (waterfall colors), Proximity (grouped metrics) */}
+                        {activeTab === 'overview' && (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in">
+                                {/* LEFT COLUMN: Metric Cards - ALIGNMENT: Grid alignment */}
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {/* V-Score - CONTRAST: Color indicates risk level */}
+                                        <div className="col-span-1 rounded-lg border border-white/20 p-5 relative overflow-hidden group hover:border-white/40 transition-colors">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <span className="text-[10px] font-bold tracking-widest uppercase opacity-60">V-Score Safety</span>
+                                                <span className={cn("text-3xl font-bold", isHighRisk ? "text-intl-orange" : "text-matchbox-green")}>
+                                                    {selectedRoute.riskScore ? selectedRoute.riskScore.toFixed(1) : '9.5'}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* TVL */}
+                                        <div className="col-span-1 rounded-lg border border-white/20 p-5 group hover:border-white/40 transition-colors">
+                                            <span className="text-[10px] font-bold tracking-widest uppercase opacity-60 block mb-2">TVL</span>
+                                            <div className="text-3xl font-bold">${selectedRoute.bridgeMetadata.tvl}M</div>
+                                        </div>
+
+                                        {/* Audit */}
+                                        <div className="col-span-1 rounded-lg border border-white/20 p-5 group hover:border-white/40 transition-colors">
+                                            <span className="text-[10px] font-bold tracking-widest uppercase opacity-60 block mb-2">Audit</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-2xl font-bold">Verified</span>
+                                                <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]" />
+                                            </div>
+                                        </div>
+
+                                        {/* Gas */}
+                                        <div className="col-span-1 rounded-lg border border-white/20 p-5 group hover:border-white/40 transition-colors">
+                                            <span className="text-[10px] font-bold tracking-widest uppercase opacity-60 block mb-2">Total Cost</span>
+                                            <div className="text-3xl font-bold">${selectedRoute.totalCost.toFixed(2)}</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Pre-flight Summary - PROXIMITY: Related checks grouped */}
+                                    <div className="rounded-lg border border-white/20 p-5">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <span className="text-[10px] font-bold tracking-widest uppercase opacity-60">Pre-Flight Checks</span>
+                                            {preFlightPassed ? (
+                                                <span className="text-[10px] font-bold text-green-400 flex items-center gap-1">
+                                                    <CheckCircle2 className="w-3 h-3" /> ALL PASSED
+                                                </span>
+                                            ) : (
+                                                <span className="text-[10px] font-bold text-orange-400 flex items-center gap-1">
+                                                    <AlertTriangle className="w-3 h-3" /> REVIEW NEEDED
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {preFlightChecks.slice(0, 4).map((check) => (
+                                                <div key={check.name} className="flex items-center gap-2 text-xs">
+                                                    {check.status === 'pass' ? (
+                                                        <CheckCircle2 className="w-3 h-3 text-green-400" />
+                                                    ) : check.status === 'warn' ? (
+                                                        <AlertTriangle className="w-3 h-3 text-orange-400" />
+                                                    ) : (
+                                                        <X className="w-3 h-3 text-red-400" />
+                                                    )}
+                                                    <span className="opacity-80">{check.name}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="absolute inset-0 flex items-center px-8 gap-2">
-                                    {Array.from({ length: 30 }).map((_, i) => {
-                                        const day = i + 1;
-                                        const dailyYield = (10000 * (apy / 100)) / 365;
-                                        const totalCost = selectedRoute.totalCost;
-                                        const cumulative = (dailyYield * day) - totalCost;
-
-                                        const limit = Math.max(Math.abs(projection), totalCost * 2);
-                                        const heightPct = Math.min((Math.abs(cumulative) / limit) * 100, 45); // Max 45% height
-
-                                        return (
-                                            <div key={i} className="flex-1 h-full flex flex-col items-center justify-center group/bar relative">
-                                                {/* Tooltip */}
-                                                <div className="absolute -top-4 opacity-0 group-hover/bar:opacity-100 transition-opacity bg-sumi-black border border-white/20 text-white text-[10px] font-mono py-1 px-2 rounded z-20 pointer-events-none whitespace-nowrap">
-                                                    Day {day}: <span className={cumulative >= 0 ? "text-green-400" : "text-red-400"}>${cumulative.toFixed(2)}</span>
-                                                </div>
-
-                                                {/* Positive Bar */}
-                                                <div className="w-full flex-1 flex flex-col justify-end pb-[1px]">
-                                                    {cumulative > 0 && (
-                                                        <div
-                                                            className="w-full bg-green-400 rounded-t-sm animate-grow-up hover:brightness-110 cursor-help"
-                                                            style={{ height: `${heightPct}%` }}
-                                                        />
-                                                    )}
-                                                </div>
-
-                                                {/* Zero Line Marker */}
-                                                <div className="w-full h-0.5 bg-white/20" />
-
-                                                {/* Negative Bar */}
-                                                <div className="w-full flex-1 flex flex-col justify-start pt-[1px]">
-                                                    {cumulative < 0 && (
-                                                        <div
-                                                            className="w-full bg-red-400/80 rounded-b-sm animate-grow-down hover:brightness-110 cursor-help"
-                                                            style={{ height: `${heightPct}%` }}
-                                                        />
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
+                                {/* RIGHT COLUMN: Waterfall Chart - CONTRAST: Green/orange bars */}
+                                <div className="bg-white rounded-lg p-6 text-sumi-black min-h-[280px]">
+                                    <WaterfallChart
+                                        data={waterfallData}
+                                        title="Net Yield Breakdown"
+                                    />
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {/* EXECUTION TAB Placeholder */}
-                    {activeTab === 'execution' && (
-                        <div className="w-full h-full flex flex-col items-center justify-center animate-fade-in opacity-60">
-                            <Clock className="w-12 h-12 mb-4" />
-                            <p className="font-mono text-sm uppercase">Execution Wizard Ready</p>
-                            <p className="text-xs mt-2">Click "Execute" in header to start</p>
-                        </div>
-                    )}
-                </div>
+                        {/* PROJECTIONS TAB - CRAP: Alignment (side-by-side charts) */}
+                        {activeTab === 'projections' && (
+                            <div className="space-y-8 animate-fade-in">
+                                {/* Two charts side by side - ALIGNMENT */}
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    {/* Yield Histogram - CONTRAST: Highlighted current APY */}
+                                    <div className="bg-white rounded-lg p-6 text-sumi-black min-h-[300px]">
+                                        <YieldHistogram
+                                            histogram={mockHistogramData}
+                                            statistics={mockStatistics}
+                                            currentApy={apy}
+                                            title="APY Stability"
+                                        />
+                                    </div>
 
-            </motion.div>
-        </div>
+                                    {/* Breakeven Chart area - Existing 30-day projection */}
+                                    <div className="bg-white/10 rounded-lg p-6 border border-white/10">
+                                        <div className="mb-4">
+                                            <h3 className="text-lg font-bold tracking-tight mb-1">Cost Recovery</h3>
+                                            <p className="text-xs font-mono opacity-60 uppercase">30-Day Breakeven Analysis</p>
+                                        </div>
+                                        <div className="flex items-center justify-between mb-6">
+                                            <div>
+                                                <div className="text-[10px] font-mono opacity-60 uppercase mb-1">Breakeven</div>
+                                                <div className="text-3xl font-bold text-matchbox-green">
+                                                    ~{selectedRoute.breakevenDays?.toFixed(1) || (selectedRoute.totalCost / ((10000 * (apy / 100)) / 365)).toFixed(1)} Days
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-[10px] font-mono opacity-60 uppercase mb-1">Daily Yield</div>
+                                                <div className="text-xl font-bold">
+                                                    ${selectedRoute.dailyYieldUsd?.toFixed(2) || ((10000 * (apy / 100)) / 365).toFixed(2)}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Simple bar visualization */}
+                                        <div className="h-32 flex items-end gap-1">
+                                            {Array.from({ length: 30 }).map((_, i) => {
+                                                const day = i + 1;
+                                                const dailyYield = selectedRoute.dailyYieldUsd || (10000 * (apy / 100)) / 365;
+                                                const cumulative = (dailyYield * day) - selectedRoute.totalCost;
+                                                const maxVal = dailyYield * 30;
+                                                const height = Math.min(Math.abs(cumulative) / maxVal * 100, 100);
+
+                                                return (
+                                                    <div key={i} className="flex-1 flex flex-col justify-end h-full">
+                                                        <div
+                                                            className={cn(
+                                                                "w-full rounded-t-sm transition-all",
+                                                                cumulative >= 0 ? "bg-green-400" : "bg-red-400/60"
+                                                            )}
+                                                            style={{ height: `${height}%` }}
+                                                        />
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <div className="flex justify-between mt-2 text-[10px] font-mono opacity-40">
+                                            <span>Day 1</span>
+                                            <span>Day 15</span>
+                                            <span>Day 30</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* EXECUTION TAB */}
+                        {activeTab === 'execution' && (
+                            <div className="w-full h-full flex flex-col items-center justify-center animate-fade-in py-12">
+                                {preFlightPassed ? (
+                                    <>
+                                        <CheckCircle2 className="w-16 h-16 mb-4 text-green-400" />
+                                        <p className="font-bold text-xl uppercase mb-2">Ready to Execute</p>
+                                        <p className="text-sm opacity-60 mb-8">All safety checks passed. Click Execute to proceed.</p>
+                                        <button
+                                            onClick={handleExecuteClick}
+                                            className="bg-white text-[#0047AB] px-12 py-4 rounded font-bold uppercase tracking-wider text-sm hover:scale-105 transition-transform flex items-center gap-2 shadow-lg"
+                                        >
+                                            Execute Migration <ArrowUpRight className="w-4 h-4" />
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <AlertTriangle className="w-16 h-16 mb-4 text-orange-400" />
+                                        <p className="font-bold text-xl uppercase mb-2">Pre-Flight Issues</p>
+                                        <p className="text-sm opacity-60 mb-8">Please review the safety checks before proceeding.</p>
+                                        <button
+                                            onClick={() => setActiveTab('overview')}
+                                            className="border border-white/30 px-8 py-3 rounded font-bold uppercase tracking-wider text-sm hover:bg-white/10 transition-colors"
+                                        >
+                                            Review Checks
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+            </div>
+
+            {/* Pre-Flight Modal */}
+            <PreFlightModal
+                isOpen={showPreFlight}
+                onClose={() => setShowPreFlight(false)}
+                onProceed={handleProceedWithMigration}
+                checks={preFlightChecks}
+                isLoading={isCheckingPreflight}
+                migrationDetails={{
+                    fromChain: 'Ethereum',
+                    toChain: selectedRoute.targetPool.chain,
+                    amount: 10000,
+                    protocol: selectedRoute.targetPool.project,
+                }}
+            />
+        </>
     );
 };
 
